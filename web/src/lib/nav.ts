@@ -137,6 +137,8 @@ export function getNavGroups(account: Account | null | undefined): NavGroup[] {
       {key: "/plans", label: i18next.t("general:Plans")},
       {key: "/pricings", label: i18next.t("general:Pricings")},
       {key: "/subscriptions", label: i18next.t("general:Subscriptions")},
+      {key: "/redemption-batches", label: "Redemption Batches"},
+      {key: "/membership/redeem", label: "Redeem Membership"},
       {key: "/transactions", label: i18next.t("general:Transactions")},
     ],
   });
