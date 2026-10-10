@@ -59,8 +59,7 @@ func (c *ApiController) MembershipGenerate() {
 }
 
 func (c *ApiController) MembershipEntitlement() {
-	auth := c.Ctx.Input.Header("Authorization")
-	token := strings.TrimPrefix(auth, "Bearer ")
+	token := c.Ctx.Input.Header("X-Membership-Service-Token")
 	if expected := os.Getenv("CASDOOR_MEMBERSHIP_SERVICE_TOKEN"); expected == "" || token != expected {
 		c.ResponseError("unauthorized")
 		return
