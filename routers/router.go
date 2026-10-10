@@ -301,6 +301,9 @@ func InitAPI() {
 	web.Router("/api/update-subscription", &controllers.ApiController{}, "POST:UpdateSubscription")
 	web.Router("/api/add-subscription", &controllers.ApiController{}, "POST:AddSubscription")
 	web.Router("/api/delete-subscription", &controllers.ApiController{}, "POST:DeleteSubscription")
+	web.Router("/api/redeem-membership-code", &controllers.ApiController{}, "POST:MembershipRedeem")
+	web.Router("/api/generate-membership-codes", &controllers.ApiController{}, "POST:MembershipGenerate")
+	web.Router("/api/get-membership-entitlement", &controllers.ApiController{}, "GET:MembershipEntitlement")
 
 	web.Router("/api/get-transactions", &controllers.ApiController{}, "GET:GetTransactions")
 	web.Router("/api/get-transaction", &controllers.ApiController{}, "GET:GetTransaction")
