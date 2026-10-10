@@ -447,11 +447,17 @@ func (a *Ormer) createTable() {
 	if err != nil {
 		panic(err)
 	}
-	err = a.Engine.Sync2(new(MembershipCode))
+	err = a.Engine.Sync2(new(RedemptionBatch))
 	if err != nil {
 		panic(err)
 	}
-	err = a.Engine.Sync2(new(MembershipRedemption))
+
+	err = a.Engine.Sync2(new(RedemptionCode))
+	if err != nil {
+		panic(err)
+	}
+
+	err = a.Engine.Sync2(new(RedemptionAudit))
 	if err != nil {
 		panic(err)
 	}

@@ -101,6 +101,8 @@ const PricingListPage = React.lazy(() => import("@/pages/PricingListPage"));
 const PricingEditPage = React.lazy(() => import("@/pages/PricingEditPage"));
 const SubscriptionListPage = React.lazy(() => import("@/pages/SubscriptionListPage"));
 const SubscriptionEditPage = React.lazy(() => import("@/pages/SubscriptionEditPage"));
+const RedemptionPage = React.lazy(() => import("@/pages/RedemptionPage"));
+const RedemptionBatchListPage = React.lazy(() => import("@/pages/RedemptionBatchListPage"));
 const TransactionListPage = React.lazy(() => import("@/pages/TransactionListPage"));
 const TransactionEditPage = React.lazy(() => import("@/pages/TransactionEditPage"));
 
@@ -335,6 +337,8 @@ export default function App() {
           <Route path="/pricings/:organizationName/:pricingName" element={<PricingEditPage />} />
           <Route path="/subscriptions" element={<SubscriptionListPage />} />
           <Route path="/subscriptions/:organizationName/:subscriptionName" element={<SubscriptionEditPage />} />
+          <Route path="/membership/redeem" element={<RedemptionPage />} />
+          <Route path="/redemption-batches" element={<RedemptionBatchListPage />} />
           <Route path="/transactions" element={<TransactionListPage />} />
           <Route path="/transactions/:organizationName/:transactionName" element={<TransactionEditPage />} />
 
