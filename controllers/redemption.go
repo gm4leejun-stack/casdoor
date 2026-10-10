@@ -4,11 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/casdoor/casdoor/object"
-	"github.com/casdoor/casdoor/util"
 )
 
 type redemptionBatchRequest struct {
@@ -86,20 +84,13 @@ func (c *ApiController) RedeemMembershipCode() {
 		c.ResponseError("invalid request body")
 		return
 	}
-	userID := c.GetSessionUsername()
+	currentUser := c.getCurrentUser()
 	owner := req.Owner
-	if owner == "" || userID == "" {
+	if owner == "" || currentUser == nil || currentUser.Owner != owner {
 		c.ResponseError(c.T("auth:Unauthorized operation"))
 		return
 	}
-	userOwner, userName := owner, userID
-	if strings.Contains(userID, "/") {
-		userOwner, userName = util.GetOwnerAndNameFromIdNoCheck(userID)
-	}
-	if userOwner != owner {
-		c.ResponseError(c.T("auth:Unauthorized operation"))
-		return
-	}
+	userName := currentUser.Name
 	result, err := object.RedeemMembershipCode(object.RedemptionRequest{Owner: owner, User: userName, Code: req.Code, Pepper: membershipPepper(), RequestID: req.RequestID, Now: time.Now().UTC()})
 	if err != nil {
 		c.ResponseError(err.Error())
@@ -109,20 +100,12 @@ func (c *ApiController) RedeemMembershipCode() {
 }
 
 func (c *ApiController) GetMyRedemptions() {
-	owner, userID := c.Ctx.Input.Query("owner"), c.GetSessionUsername()
-	if owner == "" || userID == "" {
+	owner, currentUser := c.Ctx.Input.Query("owner"), c.getCurrentUser()
+	if owner == "" || currentUser == nil || currentUser.Owner != owner {
 		c.ResponseError(c.T("auth:Unauthorized operation"))
 		return
 	}
-	userOwner, userName := owner, userID
-	if strings.Contains(userID, "/") {
-		userOwner, userName = util.GetOwnerAndNameFromIdNoCheck(userID)
-	}
-	if userOwner != owner {
-		c.ResponseError(c.T("auth:Unauthorized operation"))
-		return
-	}
-	audits, err := object.GetRedemptionAudits(owner, userName)
+	audits, err := object.GetRedemptionAudits(owner, currentUser.Name)
 	if err != nil {
 		c.ResponseError(err.Error())
 		return

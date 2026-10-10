@@ -2,11 +2,9 @@ package controllers
 
 import (
 	"os"
-	"strings"
 	"time"
 
 	"github.com/casdoor/casdoor/object"
-	"github.com/casdoor/casdoor/util"
 )
 
 func membershipEntitlement(owner, userName, plan string) (*object.MembershipEntitlement, error) {
@@ -35,20 +33,12 @@ func membershipEntitlement(owner, userName, plan string) (*object.MembershipEnti
 func (c *ApiController) GetMyMembershipEntitlement() {
 	owner := c.Ctx.Input.Query("owner")
 	plan := c.Ctx.Input.Query("plan")
-	userID := c.GetSessionUsername()
-	if owner == "" || userID == "" {
+	currentUser := c.getCurrentUser()
+	if owner == "" || currentUser == nil || currentUser.Owner != owner {
 		c.ResponseError(c.T("auth:Unauthorized operation"))
 		return
 	}
-	userOwner, userName := owner, userID
-	if strings.Contains(userID, "/") {
-		userOwner, userName = util.GetOwnerAndNameFromIdNoCheck(userID)
-	}
-	if userOwner != owner {
-		c.ResponseError(c.T("auth:Unauthorized operation"))
-		return
-	}
-	result, err := membershipEntitlement(owner, userName, plan)
+	result, err := membershipEntitlement(owner, currentUser.Name, plan)
 	if err != nil {
 		c.ResponseError("membership entitlement unavailable")
 		return
