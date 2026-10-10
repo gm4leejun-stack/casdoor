@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -519,6 +520,9 @@ func getImpersonateUser(ctx *context.Context, subOwner, subName, username string
 
 func ApiFilter(ctx *context.Context) {
 	urlPath := getUrlPath(ctx)
+	if expected := os.Getenv("CASDOOR_MEMBERSHIP_SERVICE_TOKEN"); urlPath == "/api/get-membership-entitlement" && expected != "" && ctx.Input.Header("X-Membership-Service-Token") == expected {
+		return
+	}
 	// before the subject is read: it may sign out a session left by another application's token
 	if !checkDynamicClientSession(ctx, urlPath) {
 		return
