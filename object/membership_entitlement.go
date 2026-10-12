@@ -25,8 +25,8 @@ type MembershipEntitlement struct {
 }
 
 type MembershipSubject struct {
-	Owner    string `json:"owner"`
-	UserName string `json:"userName"`
+	Issuer string `json:"issuer"`
+	UserID string `json:"userId"`
 }
 
 func EvaluateMembership(sub *Subscription, now time.Time) MembershipEntitlement {
@@ -34,7 +34,6 @@ func EvaluateMembership(sub *Subscription, now time.Time) MembershipEntitlement 
 	if sub == nil {
 		return result
 	}
-	result.Subject = MembershipSubject{Owner: sub.Owner, UserName: sub.User}
 	result.Plan, result.SubscriptionID = sub.Plan, sub.GetId()
 	result.StartsAt, result.ExpiresAt = sub.StartTime, sub.EndTime
 	if sub.State == SubStateSuspended {
