@@ -280,7 +280,7 @@ func CheckSameDbAdapterTable(adapter *Adapter) error {
 		}
 	}
 
-	return fmt.Errorf("the table: %s is already used by Casdoor or another organization", table)
+	return fmt.Errorf("the table: %s is already used by BeiBei AI or another organization", table)
 }
 
 func CheckAdapterHost(adapter *Adapter) error {

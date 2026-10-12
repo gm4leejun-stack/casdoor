@@ -6,11 +6,11 @@
          favicon, so the first paint is already branded; keep it byte-identical -->
     <link rel="icon" href="https://cdn.casbin.org/img/favicon.png" />
     <link rel="apple-touch-icon" href="https://cdn.casbin.org/img/favicon.png" />
-    <link rel="manifest" href="https://cdn.casbin.org/site/casdoor/manifest.json" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Casdoor - An open-source Identity and Access Management (IAM) / Single-Sign-On (SSO) platform" />
-    <title>Casdoor</title>
+    <meta name="description" content="BeiBei AI - An Identity and Access Management (IAM) / Single-Sign-On (SSO) platform" />
+    <title>BeiBei AI</title>
     <style>
       body {
         margin: 0;
@@ -150,15 +150,15 @@
             return;
           }
           if (event && event.target && event.target !== window && event.target.tagName === "SCRIPT") {
-            show("Casdoor failed to load", "Could not load: " + (event.target.src || ""));
+            show("BeiBei AI failed to load", "Could not load: " + (event.target.src || ""));
             return;
           }
-          show("Casdoor failed to load", event && event.message ? String(event.message) : "");
+          show("BeiBei AI failed to load", event && event.message ? String(event.message) : "");
         }, true);
 
         window.addEventListener("load", function() {
           window.setTimeout(function() {
-            show("Casdoor is taking too long to load", "");
+            show("BeiBei AI is taking too long to load", "");
           }, 20000);
         });
       })();
@@ -188,7 +188,7 @@
         <div id="casdoor-boot-message">
           <h1 id="casdoor-boot-title"></h1>
           <p id="casdoor-boot-hint">
-            Your browser may be too old to run Casdoor. Please open this page in a recent version of Chrome, Edge, Firefox or Safari.
+            Your browser may be too old to run BeiBei AI. Please open this page in a recent version of Chrome, Edge, Firefox or Safari.
             If this page was opened inside an app's built-in login window, sign in with your system browser instead.
           </p>
           <div id="casdoor-boot-detail"></div>

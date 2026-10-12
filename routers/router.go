@@ -14,12 +14,12 @@
 
 // Package routers
 // @APIVersion 1.503.0
-// @Title Casdoor RESTful API
-// @Description Swagger Docs of Casdoor Backend API
+// @Title BeiBei AI RESTful API
+// @Description Swagger Docs of BeiBei AI Backend API
 // @Contact casbin@googlegroups.com
 // @SecurityDefinition AccessToken apiKey Authorization header
 // @Schemes https,http
-// @ExternalDocs Find out more about Casdoor
+// @ExternalDocs Find out more about BeiBei AI
 // @ExternalDocsUrl https://casdoor.org/
 package routers
 

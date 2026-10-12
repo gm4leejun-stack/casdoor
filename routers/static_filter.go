@@ -306,8 +306,8 @@ func StaticFilter(ctx *context.Context) {
 		}
 		dir = strings.ReplaceAll(dir, "\\", "/")
 		ctx.ResponseWriter.WriteHeader(http.StatusNotFound)
-		errorText := fmt.Sprintf("The Casdoor frontend HTML file: \"index.html\" was not found, it should be placed at: \"%s/web/build/index.html\". For more information, see: https://casdoor.org/docs/basic/server-installation/#frontend-1", dir)
-		http.ServeContent(ctx.ResponseWriter, ctx.Request, "Casdoor frontend has encountered error...", time.Now(), strings.NewReader(errorText))
+		errorText := fmt.Sprintf("The BeiBei AI frontend HTML file: \"index.html\" was not found, it should be placed at: \"%s/web/build/index.html\". For more information, see: https://casdoor.org/docs/basic/server-installation/#frontend-1", dir)
+		http.ServeContent(ctx.ResponseWriter, ctx.Request, "BeiBei AI frontend has encountered error...", time.Now(), strings.NewReader(errorText))
 		return
 	}
 
@@ -335,7 +335,7 @@ func serveFileWithReplace(w http.ResponseWriter, r *http.Request, name string, o
 	newContent := oldContent
 	if organizationThemeCookie != nil {
 		newContent = strings.ReplaceAll(newContent, "https://cdn.casbin.org/img/favicon.png", html.EscapeString(organizationThemeCookie.Favicon))
-		newContent = strings.ReplaceAll(newContent, "<title>Casdoor</title>", fmt.Sprintf("<title>%s</title>", html.EscapeString(organizationThemeCookie.DisplayName)))
+		newContent = strings.ReplaceAll(newContent, "<title>BeiBei AI</title>", fmt.Sprintf("<title>%s</title>", html.EscapeString(organizationThemeCookie.DisplayName)))
 	}
 
 	// Set the correct <html lang="..."> on the initial HTML response so browsers

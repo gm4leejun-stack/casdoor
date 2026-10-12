@@ -154,7 +154,7 @@ func getMagicLinkEmailContent(provider *Provider, magicLinkUrl string, user *Use
 // getDefaultMagicLinkEmailContent is the mail an Email provider without a "%link" in
 // its own content falls back to.
 func getDefaultMagicLinkEmailContent() string {
-	return `<p>You have requested a sign-in link at Casdoor.</p>
+	return `<p>You have requested a sign-in link at BeiBei AI.</p>
 <p><a href="%link">Click here to sign in</a></p>
 <p>Or open this link: %link</p>
 <p>The link can only be used once, in the browser you asked for it, and expires in %expireTime minutes. If you did not request it, you can ignore this email.</p>`

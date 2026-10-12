@@ -35,10 +35,10 @@ func InitDb() {
 		initBuiltInPermission()
 		initBuiltInProvider()
 		initBuiltInUser()
-		initBuiltInApplication()
 		initBuiltInCert()
 		initBuiltInLdap()
 	}
+	initBuiltInApplication()
 
 	existed = initBuiltInApiModel()
 	if !existed {
@@ -202,7 +202,7 @@ func initBuiltInUser() {
 	}
 
 	if user.Password == "" {
-		fmt.Println("The password of built-in/admin is not set, open Casdoor in the browser to set it, or set initAdminPassword before the first start")
+		fmt.Println("The password of built-in/admin is not set, open BeiBei AI in the browser to set it, or set initAdminPassword before the first start")
 	}
 }
 
@@ -285,6 +285,24 @@ func initBuiltInApplication() {
 	}
 
 	if application != nil {
+		updates := &Application{}
+		columns := []string{}
+		if application.DisplayName == "Casdoor" || application.DisplayName == "BeiBei" {
+			updates.DisplayName = "BeiBei AI"
+			columns = append(columns, "display_name")
+		}
+		if application.Logo == "" || strings.HasSuffix(application.Logo, "/img/casdoor-logo_1185x256.png") {
+			updates.Logo = "/beibei-logo.svg"
+			columns = append(columns, "logo")
+		}
+		if len(columns) != 0 {
+			_, err = ormer.Engine.ID(core.PK{application.Owner, application.Name}).
+				Cols(columns...).
+				Update(updates)
+			if err != nil {
+				panic(err)
+			}
+		}
 		return
 	}
 
@@ -292,11 +310,11 @@ func initBuiltInApplication() {
 		Owner:          "admin",
 		Name:           "app-built-in",
 		CreatedTime:    util.GetCurrentTime(),
-		DisplayName:    "Casdoor",
+		DisplayName:    "BeiBei AI",
 		Category:       "Default",
 		Type:           "All",
 		Scopes:         []*ScopeItem{},
-		Logo:           fmt.Sprintf("%s/img/casdoor-logo_1185x256.png", conf.GetConfigString("staticBaseUrl")),
+		Logo:           "/beibei-logo.svg",
 		HomepageUrl:    "https://casdoor.org",
 		Organization:   "built-in",
 		Cert:           "cert-built-in",
@@ -378,7 +396,7 @@ func warnPublicBuiltInCert() {
 	privateKey := strings.TrimSpace(strings.ReplaceAll(cert.PrivateKey, "\r", ""))
 	hash := sha256.Sum256([]byte(privateKey))
 	if hex.EncodeToString(hash[:]) == publicBuiltInPrivateKeySha256 {
-		fmt.Printf("WARNING: the cert: %s signs tokens with the private key published in the Casdoor repository, anyone can forge its tokens, please generate a new key pair for it\n", cert.GetId())
+		fmt.Printf("WARNING: the cert: %s signs tokens with the private key published in the upstream source repository, anyone can forge its tokens, please generate a new key pair for it\n", cert.GetId())
 	}
 }
 

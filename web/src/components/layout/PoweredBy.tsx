@@ -21,7 +21,7 @@ export function PoweredBy() {
       <a href="https://casdoor.org" target="_blank" rel="noreferrer">
         <img
           src={Setting.getLogo([isDark ? "dark" : "light"])}
-          alt="Casdoor"
+          alt="BeiBei AI"
           height={20}
           className="h-5 w-auto pb-[3px]"
         />

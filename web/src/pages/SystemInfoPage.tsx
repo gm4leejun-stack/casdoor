@@ -271,7 +271,7 @@ export default function SystemInfoPage() {
           <div>
             GitHub:{" "}
             <a href="https://github.com/casdoor/casdoor" target="_blank" rel="noreferrer" className="underline-offset-4 hover:underline">
-              Casdoor
+              BeiBei AI
             </a>
           </div>
           <div>
@@ -292,7 +292,7 @@ export default function SystemInfoPage() {
           <div>
             {i18next.t("system:Official website")}:{" "}
             <a href="https://casdoor.org" target="_blank" rel="noreferrer" className="underline-offset-4 hover:underline">
-              https://casdoor.org
+              BeiBei AI website
             </a>
           </div>
           <div>

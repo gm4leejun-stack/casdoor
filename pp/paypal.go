@@ -66,7 +66,7 @@ func (pp *PaypalPaymentProvider) Pay(r *PayReq) (*PayResp, error) {
 	bm.Set("intent", "CAPTURE")
 	bm.Set("purchase_units", units)
 	bm.SetBodyMap("application_context", func(b gopay.BodyMap) {
-		b.Set("brand_name", "Casdoor")
+		b.Set("brand_name", "BeiBei AI")
 		b.Set("locale", "en-PT")
 		b.Set("return_url", r.ReturnUrl)
 		b.Set("cancel_url", r.ReturnUrl)

@@ -76,7 +76,7 @@ func (c *ApiController) pinProviderObjectOwner(providerObject *object.Provider) 
 // SendEmail
 // @Title SendEmail
 // @Tag Service API
-// @Description This API is not for Casdoor frontend to call, it is for Casdoor SDKs.
+// @Description This API is not for BeiBei AI frontend to call, it is for Casdoor SDKs.
 // @Param   clientId    query    string  true        "The clientId of the application"
 // @Param   clientSecret    query    string  true    "The clientSecret of the application"
 // @Param   from    body   controllers.EmailForm    true         "Details of the email request"
@@ -181,7 +181,7 @@ func (c *ApiController) SendEmail() {
 	}
 
 	code := "123456"
-	// "You have requested a verification code at Casdoor. Here is your code: %s, please enter in 5 minutes."
+	// "You have requested a verification code at BeiBei AI. Here is your code: %s, please enter in 5 minutes."
 	content = strings.Replace(content, "%s", code, 1)
 	userString := "Hi"
 	if !object.IsAppUser(userId) {
@@ -214,7 +214,7 @@ func (c *ApiController) SendEmail() {
 // SendSms
 // @Title SendSms
 // @Tag Service API
-// @Description This API is not for Casdoor frontend to call, it is for Casdoor SDKs.
+// @Description This API is not for BeiBei AI frontend to call, it is for Casdoor SDKs.
 // @Param   clientId    query    string  true        "The clientId of the application"
 // @Param   clientSecret    query    string  true    "The clientSecret of the application"
 // @Param   from    body   controllers.SmsForm    true           "Details of the sms request"
@@ -257,7 +257,7 @@ func (c *ApiController) SendSms() {
 // SendNotification
 // @Title SendNotification
 // @Tag Service API
-// @Description This API is not for Casdoor frontend to call, it is for Casdoor SDKs.
+// @Description This API is not for BeiBei AI frontend to call, it is for Casdoor SDKs.
 // @Param   from    body   controllers.NotificationForm    true         "Details of the notification request"
 // @Success 200 {object} controllers.Response The Response object
 // @router /send-notification [post]

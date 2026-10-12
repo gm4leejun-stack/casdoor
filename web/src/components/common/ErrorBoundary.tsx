@@ -13,7 +13,7 @@ export default class ErrorBoundary extends React.Component<{children: React.Reac
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     // eslint-disable-next-line no-console
-    console.error("Casdoor UI crashed:", error, info);
+    console.error("BeiBei AI UI crashed:", error, info);
   }
 
   render() {

@@ -34,9 +34,9 @@ type TotpMfa struct {
 }
 
 func (mfa *TotpMfa) Initiate(userId string, issuer string) (*MfaProps, error) {
-	// Use the provided issuer (application display name), or fall back to "Casdoor" if not provided
+	// Use the provided issuer (application display name), or fall back to "BeiBei AI" if not provided
 	if issuer == "" {
-		issuer = "Casdoor"
+		issuer = "BeiBei AI"
 	}
 
 	key, err := totp.Generate(totp.GenerateOpts{

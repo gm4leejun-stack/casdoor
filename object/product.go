@@ -307,7 +307,7 @@ func CreateProductForPlan(plan *Plan) *Product {
 		DisplayName: fmt.Sprintf("Product for Plan %v/%v/%v", plan.Name, plan.DisplayName, plan.Period),
 		CreatedTime: plan.CreatedTime,
 
-		Image:       "https://cdn.casbin.org/img/casdoor-logo_1185x256.png", // TODO
+		Image:       "/beibei-logo.svg",
 		Detail:      fmt.Sprintf("This product was auto created for plan %v(%v), subscription period is %v", plan.Name, plan.DisplayName, plan.Period),
 		Description: plan.Description,
 		Tag:         "auto_created_product_for_plan",

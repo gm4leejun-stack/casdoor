@@ -66,7 +66,7 @@ func (sp LocalFileSystemProvider) Put(path string, reader io.Reader) (*oss.Objec
 
 	err := os.MkdirAll(filepath.Dir(fullPath), os.ModePerm)
 	if err != nil {
-		return nil, fmt.Errorf("Casdoor fails to create folder: \"%s\" for local file system storage provider: %s. Make sure Casdoor process has correct permission to create/access it, or you can create it manually in advance", filepath.Dir(fullPath), err.Error())
+		return nil, fmt.Errorf("BeiBei AI fails to create folder: \"%s\" for local file system storage provider: %s. Make sure the BeiBei AI process has correct permission to create/access it, or you can create it manually in advance", filepath.Dir(fullPath), err.Error())
 	}
 
 	dst, err := os.Create(filepath.Clean(fullPath))

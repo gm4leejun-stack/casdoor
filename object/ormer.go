@@ -96,7 +96,7 @@ func InitAdapter() {
 				panic(err)
 			}
 			dir = strings.ReplaceAll(dir, "\\", "/")
-			panic(fmt.Sprintf("The Casdoor config file: \"app.conf\" was not found, it should be placed at: \"%s/conf/app.conf\"", dir))
+			panic(fmt.Sprintf("The BeiBei AI config file: \"app.conf\" was not found, it should be placed at: \"%s/conf/app.conf\"", dir))
 		}
 	}
 

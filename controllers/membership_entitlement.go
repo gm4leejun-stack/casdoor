@@ -83,7 +83,7 @@ func (c *ApiController) GetMembershipEntitlement() {
 	owner, plan := c.Ctx.Input.Query("owner"), c.Ctx.Input.Query("plan")
 	issuer, userID := c.Ctx.Input.Query("issuer"), c.Ctx.Input.Query("userId")
 	if !validateMembershipSubject(owner, plan, issuer, userID, conf.GetConfigString("origin")) {
-		c.ResponseError("owner, plan, issuer, and userId are required and issuer must match this BeiBei instance")
+		c.ResponseError("owner, plan, issuer, and userId are required and issuer must match this BeiBei AI instance")
 		return
 	}
 	// Gundam uses a dedicated static token for this internal read-only API.

@@ -682,7 +682,7 @@ export default function ProviderEditPage() {
       patch.host = "smtp.example.com";
       patch.port = 465;
       patch.sslMode = "Auto";
-      patch.title = "Casdoor Verification Code";
+      patch.title = "BeiBei AI Verification Code";
       patch.content = Setting.getDefaultHtmlEmailContent();
       patch.metadata = Setting.getDefaultInvitationHtmlEmailContent();
       patch.receiver = account?.email ?? "";
@@ -1028,7 +1028,7 @@ export default function ProviderEditPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => updateProviderField("content", "You have requested a verification code at Casdoor. Here is your code: %s, please enter in 5 minutes. <reset-link>Or click %link to reset</reset-link>")}
+              onClick={() => updateProviderField("content", "You have requested a verification code at BeiBei AI. Here is your code: %s, please enter in 5 minutes. <reset-link>Or click %link to reset</reset-link>")}
             >
               {i18next.t("general:Reset to Default")} (Text)
             </Button>
@@ -1062,7 +1062,7 @@ export default function ProviderEditPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => updateProviderField("metadata", "You have invited to join Casdoor. Here is your invitation code: %s, please enter in 5 minutes. Or click %link to signup")}
+              onClick={() => updateProviderField("metadata", "You have invited to join BeiBei AI. Here is your invitation code: %s, please enter in 5 minutes. Or click %link to signup")}
             >
               {i18next.t("general:Reset to Default")} (Text)
             </Button>

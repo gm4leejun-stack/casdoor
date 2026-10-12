@@ -1,0 +1,16 @@
+{
+  "name": "BeiBei AI",
+  "short_name": "BeiBei AI",
+  "icons": [
+    {
+      "src": "/beibei-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

@@ -55,17 +55,17 @@ var (
 
 	CpuUsage = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "casdoor_cpu_usage",
-		Help: "Casdoor cpu usage",
+		Help: "BeiBei AI cpu usage",
 	}, []string{"cpuNum"})
 
 	MemoryUsage = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "casdoor_memory_usage",
-		Help: "Casdoor memory usage in Byte",
+		Help: "BeiBei AI memory usage in Byte",
 	}, []string{"type"})
 
 	TotalThroughput = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "casdoor_total_throughput",
-		Help: "The total throughput of casdoor",
+		Help: "The total throughput of BeiBei AI",
 	})
 )
 

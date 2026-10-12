@@ -305,7 +305,7 @@ export default function AuthCallback() {
     const handleCas = (ok: any, service: string) => {
       let message = "Logged in successfully.";
       if (service === "") {
-        message += " Now you can visit apps protected by Casdoor.";
+        message += " Now you can visit apps protected by BeiBei AI.";
       }
       Setting.showMessage("success", message);
       if (service !== "") {

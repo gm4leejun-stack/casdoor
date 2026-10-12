@@ -236,11 +236,7 @@ export function getAlgorithmNames(themeData) {
 }
 
 export function getLogo(themes) {
-  if (themes.includes("dark")) {
-    return `${StaticBaseUrl}/img/casdoor-logo_1185x256_dark.png`;
-  } else {
-    return `${StaticBaseUrl}/img/casdoor-logo_1185x256.png`;
-  }
+  return "/beibei-logo.svg";
 }
 
 /**
@@ -1435,7 +1431,7 @@ export function getProviderTypeOptions(category) {
         {id: "ADFS", name: "ADFS"},
         {id: "Baidu", name: "Baidu"},
         {id: "Alipay", name: "Alipay"},
-        {id: "Casdoor", name: "Casdoor"},
+        {id: "Casdoor", name: "BeiBei AI"},
         {id: "Infoflow", name: "Infoflow"},
         {id: "Apple", name: "Apple"},
         {id: "AzureAD", name: "Azure AD"},
@@ -1556,7 +1552,7 @@ export function getProviderTypeOptions(category) {
         {id: "Qiniu Cloud Kodo", name: "Qiniu Cloud Kodo"},
         {id: "Google Cloud Storage", name: "Google Cloud Storage"},
         {id: "Synology", name: "Synology"},
-        {id: "Casdoor", name: "Casdoor"},
+        {id: "Casdoor", name: "BeiBei AI"},
         {id: "CUCloud OSS", name: "CUCloud OSS"},
       ]
     );
@@ -1636,7 +1632,7 @@ export function getProviderTypeOptions(category) {
     ]);
   } else if (category === "Log") {
     return ([
-      {id: "Casdoor Permission Log", name: "Casdoor Permission Log"},
+      {id: "Casdoor Permission Log", name: "BeiBei AI Permission Log"},
       {id: "System Log", name: "System Log"},
       {id: "Agent", name: "Agent"},
       {id: "SELinux Log", name: "SELinux Log"},
@@ -2088,7 +2084,7 @@ export function getUserCommonFields() {
 export function getDefaultFooterContent() {
   // the height is inline rather than an attribute: this HTML is injected into the
   // page, where Tailwind's preflight would otherwise reset it to `height: auto`
-  return `Powered by <a target="_blank" href="https://casdoor.org" rel="noreferrer"><img style="display: inline-block; height: 20px; width: auto; padding-bottom: 3px" alt="Casdoor" src="${StaticBaseUrl}/img/casdoor-logo_1185x256.png"/></a>`;
+  return "Powered by <a target=\"_blank\" href=\"https://casdoor.org\" rel=\"noreferrer\"><img style=\"display: inline-block; height: 20px; width: auto; padding-bottom: 3px\" alt=\"BeiBei AI\" src=\"/beibei-logo.svg\"/></a>";
 }
 
 export function getEmptyFooterContent() {
@@ -2120,7 +2116,7 @@ export function getDefaultHtmlEmailContent() {
 <div class="email-container">
   <div class="header">
         <h3>Casbin Organization</h3>
-        <img src="${StaticBaseUrl}/img/casdoor-logo_1185x256.png" alt="Casdoor Logo" width="300">
+        <img src="/beibei-logo.svg" alt="BeiBei AI Logo" width="300">
     </div>
     <p><strong>%{user.friendlyName}</strong>, here is your verification code</p>
     <p>Use this code for your transaction. It's valid for 5 minutes</p>
@@ -2136,7 +2132,7 @@ export function getDefaultHtmlEmailContent() {
     <p>Casbin Team</p>
     <hr>
     <div class="footer">
-        <p>Casdoor is a brand operated by Casbin organization. For more info please refer to <a href="https://casdoor.org">https://casdoor.org</a></p>
+        <p>BeiBei AI is an identity and access management service.</p>
     </div>
 </div>
 </body>
@@ -2163,9 +2159,9 @@ export function getDefaultInvitationHtmlEmailContent() {
 <div class="email-container">
   <div class="header">
         <h3>Casbin Organization</h3>
-        <img src="${StaticBaseUrl}/img/casdoor-logo_1185x256.png" alt="Casdoor Logo" width="300">
+        <img src="/beibei-logo.svg" alt="BeiBei AI Logo" width="300">
     </div>
-    <p>You have been invited into Casdoor</p>
+    <p>You have been invited into BeiBei AI</p>
     <div class="code">
         %code
     </div>
@@ -2178,7 +2174,7 @@ export function getDefaultInvitationHtmlEmailContent() {
     <p>Casbin Team</p>
     <hr>
     <div class="footer">
-        <p>Casdoor is a brand operated by Casbin organization. For more info please refer to <a href="https://casdoor.org">https://casdoor.org</a></p>
+        <p>BeiBei AI is an identity and access management service.</p>
     </div>
 </div>
 </body>
