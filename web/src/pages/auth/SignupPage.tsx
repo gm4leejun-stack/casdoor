@@ -57,6 +57,10 @@ function fieldClass(field: string): string {
   return `signup-${FIELD_CLASS_NAMES[field] ?? field}`;
 }
 
+function isLobeHubApplication(application: any) {
+  return application?.name === "lobehub" && application?.organization === "beibei";
+}
+
 /** the application editor's live preview hands the form's own object over */
 export default function SignupPage({application: applicationProp}: {application?: any} = {}) {
   const params = useParams();
@@ -82,12 +86,14 @@ export default function SignupPage({application: applicationProp}: {application?
   React.useEffect(() => {
     if (applicationProp) {
       setApplication(applicationProp);
-      setAgreed(true);
+      setAgreed(!isLobeHubApplication(applicationProp));
       setValues((prev) => ({
         ...prev,
         application: applicationProp.name,
         organization: applicationProp.organization,
-        countryCode: prev.countryCode ?? applicationProp.organizationObj?.countryCodes?.[0] ?? "",
+        countryCode: isLobeHubApplication(applicationProp)
+          ? "CN"
+          : prev.countryCode ?? applicationProp.organizationObj?.countryCodes?.[0] ?? "",
       }));
       return;
     }
@@ -105,16 +111,16 @@ export default function SignupPage({application: applicationProp}: {application?
       .then((res: any) => {
         if (res.status === "ok" && res.data) {
           setApplication(res.data);
-          setAgreed(true);
+          setAgreed(!isLobeHubApplication(res.data));
           const invitationCode = searchParams.get("invitationCode") ?? "";
           setValues((prev) => ({
             ...prev,
             application: res.data.name,
             organization: res.data.organization,
             invitationCode,
-            // the antd CountryCodeSelect seeded the form with it, so the phone
-            // code request and the signup payload carry it even if untouched
-            countryCode: prev.countryCode ?? res.data.organizationObj?.countryCodes?.[0] ?? "",
+            countryCode: isLobeHubApplication(res.data)
+              ? "CN"
+              : prev.countryCode ?? res.data.organizationObj?.countryCodes?.[0] ?? "",
           }));
           // an invitation can pin the username, email or phone the account must be created with
           if (invitationCode !== "") {
@@ -385,14 +391,20 @@ export default function SignupPage({application: applicationProp}: {application?
       <div className="signup-phone space-y-2">
         {renderLabel(item.label || i18next.t("general:Phone"), item.required, "phone")}
         <div className="flex gap-2">
-          <div className="w-28 max-w-[50%] shrink-0">
-            <CountryCodeSelect
-              className="px-2"
-              value={values.countryCode ?? ""}
-              onChange={(v) => set("countryCode", v)}
-              countryCodes={application.organizationObj?.countryCodes}
-            />
-          </div>
+          {isLobeHubApplication(application) ? (
+            <div className="flex w-20 shrink-0 items-center justify-center rounded-md border bg-muted text-sm">
+              +86
+            </div>
+          ) : (
+            <div className="w-28 max-w-[50%] shrink-0">
+              <CountryCodeSelect
+                className="px-2"
+                value={values.countryCode ?? ""}
+                onChange={(v) => set("countryCode", v)}
+                countryCodes={application.organizationObj?.countryCodes}
+              />
+            </div>
+          )}
           <Input
             id="phone"
             className="signup-phone-input min-w-0 flex-1"
@@ -417,7 +429,10 @@ export default function SignupPage({application: applicationProp}: {application?
             destType="phone"
             dest={values.phone ?? ""}
             countryCode={values.countryCode ?? ""}
-            disabled={!Setting.isValidPhone(values.phone ?? "", values.countryCode ?? "")}
+            disabled={
+              !Setting.isValidPhone(values.phone ?? "", values.countryCode ?? "") ||
+              (isLobeHubApplication(application) && agreementItem?.required && !agreed)
+            }
             application={application}
             applicationId={Setting.getApplicationName(application)}
           />

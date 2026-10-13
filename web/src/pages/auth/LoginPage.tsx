@@ -42,6 +42,10 @@ import * as Setting from "@/lib/setting";
 type LoginType = "login" | "code" | "cas" | "saml" | "device";
 type LoginMethod = "password" | "verificationCode" | "verificationCodeEmail" | "verificationCodePhone" | "ldap" | "webAuthn" | "wechat" | "faceId" | "magicLink" | "device";
 
+function isLobeHubApplication(application: any) {
+  return application?.name === "lobehub" && application?.organization === "beibei";
+}
+
 function getDefaultLoginMethod(application: any): LoginMethod {
   const first = application?.signinMethods?.[0];
   switch (first?.name) {
@@ -336,7 +340,7 @@ export default function LoginPage({type = "login", application: applicationProp,
         return;
       }
       setApplication(app);
-      setCountryCode(app?.organizationObj?.countryCodes?.[0] ?? "");
+      setCountryCode(isLobeHubApplication(app) ? "CN" : app?.organizationObj?.countryCodes?.[0] ?? "");
       setLoginMethod(getDefaultLoginMethod(app));
       setAgreed(true);
       setAutoSignin(Setting.getAutoSigninDefaultValue(app));
@@ -1387,14 +1391,20 @@ export default function LoginPage({type = "login", application: applicationProp,
           <div key={key} className="signin-phone space-y-2">
             <Label htmlFor="username">{item.label || i18next.t("general:Phone")}</Label>
             <div className="flex gap-2">
-              <div className="w-28 max-w-[50%] shrink-0">
-                <CountryCodeSelect
-                  className="px-2"
-                  value={countryCode}
-                  onChange={setCountryCode}
-                  countryCodes={application.organizationObj?.countryCodes}
-                />
-              </div>
+              {isLobeHubApplication(application) ? (
+                <div className="flex w-20 shrink-0 items-center justify-center rounded-md border bg-muted text-sm">
+                  +86
+                </div>
+              ) : (
+                <div className="w-28 max-w-[50%] shrink-0">
+                  <CountryCodeSelect
+                    className="px-2"
+                    value={countryCode}
+                    onChange={setCountryCode}
+                    countryCodes={application.organizationObj?.countryCodes}
+                  />
+                </div>
+              )}
               <Input
                 id="username"
                 className="login-username-input min-w-0 flex-1"

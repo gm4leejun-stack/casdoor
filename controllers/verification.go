@@ -444,7 +444,13 @@ func (c *ApiController) SendVerificationCode() {
 			sendResp = object.SendVerificationCodeToEmail(organization, user, provider, clientIp, vform.Dest, vform.Method, c.Ctx.Request.Host, application.Name, application, c.GetAcceptLanguage())
 		}
 	case object.VerifyTypePhone:
-		if vform.Method == SignupVerification {
+		isLobeHubApplication := application.Name == "lobehub" && application.Organization == "beibei"
+		if isLobeHubApplication && (vform.Method == SignupVerification || vform.Method == LoginVerification) && vform.CountryCode != "CN" {
+			c.ResponseError(c.T("verification:Wrong parameter") + ": countryCode.")
+			return
+		}
+
+		if vform.Method == SignupVerification && !isLobeHubApplication {
 			phone, countryCode, _ := util.GetNormalizedPhone(vform.Dest, vform.CountryCode)
 			if object.HasUserByPhoneAndCountryCode(organization.Name, phone, countryCode) {
 				c.ResponseError(c.T("check:Phone already exists"))

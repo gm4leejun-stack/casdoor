@@ -51,6 +51,7 @@ type AuthForm struct {
 	EmailCode   string `json:"emailCode"`
 	PhoneCode   string `json:"phoneCode"`
 	CountryCode string `json:"countryCode"`
+	Agreement   bool   `json:"agreement"`
 
 	AutoSignin bool `json:"autoSignin"`
 

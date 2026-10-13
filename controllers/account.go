@@ -126,6 +126,32 @@ func (c *ApiController) Signup() {
 
 	// a value posted for a hidden signup item did not come from the signup page
 	application.ClearHiddenSignupFields(&authForm)
+	isLobeHubApplication := application.Name == "lobehub" &&
+		application.Organization == "beibei" &&
+		authForm.Organization == "beibei"
+	isLobeHubPhoneSignup := isLobeHubApplication &&
+		application.IsSignupFieldVisible("Phone") &&
+		application.GetSignupFieldRule("Phone") != "No verification"
+
+	if isLobeHubApplication && application.IsSignupItemVisible("Agreement") && application.IsSignupItemRequired("Agreement") && !authForm.Agreement {
+		c.ResponseError(c.T("signup:Please accept the agreement!"))
+		return
+	}
+
+	if isLobeHubPhoneSignup {
+		if authForm.CountryCode != "CN" {
+			c.ResponseError(c.T("verification:Wrong parameter") + ": countryCode.")
+			return
+		}
+
+		phone, countryCode, ok := util.GetNormalizedPhone(authForm.Phone, authForm.CountryCode)
+		if !ok {
+			c.ResponseError(c.T("check:Phone number is invalid"))
+			return
+		}
+		authForm.Phone = phone
+		authForm.CountryCode = countryCode
+	}
 
 	clientIp := util.GetClientIpFromRequest(c.Ctx.Request)
 	err = object.CheckEntryIp(clientIp, nil, application, organization, c.GetAcceptLanguage())
@@ -158,6 +184,52 @@ func (c *ApiController) Signup() {
 		}
 	}
 
+	var checkPhone string
+	phoneCodeChecked := false
+	if isLobeHubPhoneSignup {
+		checkPhone, _ = util.GetE164Number(authForm.Phone, authForm.CountryCode)
+		err = object.CheckVerifyCodeWithLimitAndIp(nil, clientIp, checkPhone, authForm.PhoneCode, c.GetAcceptLanguage())
+		if err != nil {
+			c.ResponseError(err.Error())
+			return
+		}
+		phoneCodeChecked = true
+
+		user, err := object.GetUserByPhoneAndCountryCode(authForm.Organization, authForm.Phone, authForm.CountryCode)
+		if err != nil {
+			c.ResponseError(err.Error())
+			return
+		}
+		if user != nil {
+			if user.IsDeleted || user.IsForbidden {
+				c.ResponseError("账号暂不可用，请联系客服")
+				return
+			}
+
+			err = object.DisableVerificationCode(checkPhone)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+
+			authForm.SigninMethod = "Verification code"
+			authForm.Username = user.Name
+			authForm.Type = c.Ctx.Input.Query("responseType")
+			if authForm.Type == "" {
+				authForm.Type = ResponseTypeLogin
+			}
+
+			resp := c.HandleLoggedIn(application, user, &authForm)
+			if resp == nil {
+				return
+			}
+			c.Ctx.Input.SetParam("recordUserId", user.GetId())
+			c.Data["json"] = resp
+			c.ServeJSON()
+			return
+		}
+	}
+
 	msg := object.CheckUserSignup(application, organization, &authForm, c.GetAcceptLanguage())
 	if msg != "" {
 		c.ResponseError(msg)
@@ -186,14 +258,15 @@ func (c *ApiController) Signup() {
 		userEmailVerified = true
 	}
 
-	var checkPhone string
 	if application.IsSignupFieldVisible("Phone") && application.GetSignupFieldRule("Phone") != "No verification" && authForm.Phone != "" {
 		checkPhone, _ = util.GetE164Number(authForm.Phone, authForm.CountryCode)
 
-		err = object.CheckVerifyCodeWithLimitAndIp(nil, clientIp, checkPhone, authForm.PhoneCode, c.GetAcceptLanguage())
-		if err != nil {
-			c.ResponseError(err.Error())
-			return
+		if !phoneCodeChecked {
+			err = object.CheckVerifyCodeWithLimitAndIp(nil, clientIp, checkPhone, authForm.PhoneCode, c.GetAcceptLanguage())
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
 		}
 	}
 
@@ -261,6 +334,9 @@ func (c *ApiController) Signup() {
 		EmailVerified:     userEmailVerified,
 		RegisterType:      "Application Signup",
 		RegisterSource:    fmt.Sprintf("%s/%s", authForm.Organization, application.Name),
+	}
+	if isLobeHubPhoneSignup && !application.IsSignupItemVisible("Display name") {
+		user.DisplayName = "用户 " + util.GetMaskedPhone(authForm.Phone)
 	}
 
 	if user.Tag == "" && len(organization.Tags) > 0 {
