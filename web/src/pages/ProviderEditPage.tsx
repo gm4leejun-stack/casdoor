@@ -66,8 +66,8 @@ const CATEGORIES = [
 const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE"];
 const CONTENT_TYPES = ["application/json", "application/x-www-form-urlencoded"];
 
-const SMS_PROVIDERS_WITHOUT_SIGN_NAME = ["Custom HTTP SMS", "Twilio SMS", "Amazon SNS", "Msg91 SMS", "Infobip SMS"];
-const SMS_PROVIDERS_WITHOUT_TEMPLATE_CODE = ["Infobip SMS"];
+const SMS_PROVIDERS_WITHOUT_SIGN_NAME = ["Custom HTTP SMS", "Twilio SMS", "Amazon SNS", "Msg91 SMS", "Infobip SMS", "Samoyed SMS"];
+const SMS_PROVIDERS_WITHOUT_TEMPLATE_CODE = ["Infobip SMS", "Samoyed SMS"];
 
 const SYSLOG_PROTOCOLS = ["UDP", "TCP", "TLS"];
 const SYSLOG_FACILITIES = [
@@ -320,7 +320,7 @@ function hasCredentialRows(provider: any) {
       provider.category === "Log" ||
       provider.category === "Scan" ||
       (provider.category === "Storage" && provider.type === "Local File System") ||
-      (provider.category === "SMS" && provider.type === "Custom HTTP SMS") ||
+      (provider.category === "SMS" && ["Custom HTTP SMS", "Samoyed SMS"].includes(provider.type)) ||
       (provider.category === "Email" && provider.type === "Custom HTTP Email") ||
       (provider.category === "Notification" && ["Google Chat", "Custom HTTP", "Balance"].includes(provider.type))) {
     return false;
@@ -1006,9 +1006,11 @@ export default function ProviderEditPage() {
           </FormRow>
         </React.Fragment>
       ) : null}
-      <FormRow labelKey="provider:Enable proxy">
-        <Switch checked={!!provider.enableProxy} onCheckedChange={(v) => updateProviderField("enableProxy", v)} />
-      </FormRow>
+      {provider.type !== "Samoyed SMS" ? (
+        <FormRow labelKey="provider:Enable proxy">
+          <Switch checked={!!provider.enableProxy} onCheckedChange={(v) => updateProviderField("enableProxy", v)} />
+        </FormRow>
+      ) : null}
       {provider.type === "Custom HTTP Email" ? (
         <React.Fragment>
           {renderHttpRows(HTTP_METHODS)}
@@ -1785,7 +1787,7 @@ export default function ProviderEditPage() {
       {provider.category === "Face ID" ? renderEndpointOnlyField() : null}
       {provider.category === "ID Verification" ? renderEndpointOnlyField() : null}
 
-      {provider.category !== "Log" && provider.category !== "Audit" ? (
+      {provider.category !== "Log" && provider.category !== "Audit" && provider.type !== "Samoyed SMS" ? (
         <FormRow block labelKey="provider:Provider URL">
           <Input value={provider.providerUrl ?? ""} onChange={(e) => updateProviderField("providerUrl", e.target.value)} />
         </FormRow>
