@@ -71,6 +71,16 @@ Content-Type: `application/json`，最大 64KiB。公共 envelope 同会员接�
 
 URL 要求 HTTPS，仅 loopback 开发允许 HTTP。应用需启用登录及 EnableAutoSignin，配置精确回调 `https://lobe.example.com/api/auth/oauth2/callback/casdoor`，openid/email/profile 不应要求授权确认，不能配置需交互的提示页；LobeHub AUTH_CASDOOR_ID 对应同一应用。不接受请求方指定跳转，不自动放宽应用安全配置。联登仅支持普通非管理员账号；已启用 MFA、要求配置 MFA、要求更新密码等的账号拒绝自动联登，不绕过安全限制。
 
+### 切换现有 LobeHub 应用：不迁移账号
+
+本项目已确认的配置方式：先创建 `admin/beibei` 组织，再将现有 `admin/lobehub` Application 的 Organization 从 `gundam` 改为 `beibei`，开启 EnableAutoSignin，设置上述 Better Auth 回调。保持原 client ID、client secret 及其他 Application 不变。
+
+不迁移、合并或重建旧用户，不修改原会员和 LobeHub 聊天记录。旧 `gundam` 普通用户不再属于这个非共享 Application，不能通过它重新登录；已有 LobeHub 会话不由本配置操作主动清除。新 `beibei` 用户是独立身份，不会自动接上旧用户的数据。
+
+组织和 Application 配置保存在数据库，环境变量属于部署配置；Git 提交／推送不会复制这些运行状态。换环境或重建容器时须重新配置，先备份数据库，不把数据库备份、client secret 或萨摩耶密钥提交到仓库。
+
+本机部署已完成组织切换、自动登录、回调及三个 SMY_UNION_LOGIN 配置项，Casdoor 重启后健康检查通过，LobeHub 联登入口正常。正式商户号、公钥和私钥仍缺失，因此完整签名联登尚未验证，接口保持拒绝处理。localhost 地址仅用于本机，外部对接须配置可访问的 HTTPS 地址。此次未创建套餐或订阅。
+
 启动会显式移除客户表单列 mobile 唯一索引，保留全部数据及其他唯一约束，再 Sync2 创建凭证表 `smy_union_login_ticket`。上线前备份数据库，先部署 LobeHub 入口，再部署 Casdoor 及配置，最后开放接口。未部署代码不会生效。多个无手机号绑定产生后不能直接恢复旧手机号索引／旧身份代码；回退优先关闭新入口，保留全部账号及会员数据。
 
 ## 排查与验证
