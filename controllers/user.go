@@ -329,7 +329,7 @@ func (c *ApiController) UpdateUser() {
 		user = mergedUser
 	}
 
-	if oldUser.Owner == "built-in" && oldUser.Name == "admin" && (user.Owner != "built-in" || user.Name != "admin") {
+	if object.IsInitAdmin(oldUser.Owner, oldUser.Name) && !object.IsInitAdmin(user.Owner, user.Name) {
 		c.ResponseError(c.T("auth:Unauthorized operation"))
 		return
 	}
@@ -785,7 +785,7 @@ func (c *ApiController) SetPassword() {
 // GetInitAdminStatus
 // @Title GetInitAdminStatus
 // @Tag Account API
-// @Description whether built-in/admin is waiting for its first password on the welcome page
+// @Description whether beibei/admin is waiting for its first password on the welcome page
 // @Success 200 {object} controllers.Response The Response object
 // @router /get-init-admin-status [get]
 func (c *ApiController) GetInitAdminStatus() {
@@ -801,14 +801,14 @@ func (c *ApiController) GetInitAdminStatus() {
 // InitAdminPassword
 // @Title InitAdminPassword
 // @Tag Account API
-// @Description set the first password of built-in/admin on the welcome page
+// @Description set the first password of beibei/admin on the welcome page
 // @Param   password     formData    string  true        "The password"
 // @Success 200 {object} controllers.Response The Response object
 // @router /init-admin-password [post]
 func (c *ApiController) InitAdminPassword() {
 	password := c.Ctx.Request.Form.Get("password")
 
-	organization, err := object.GetOrganization(util.GetId("admin", "built-in"))
+	organization, err := object.GetOrganization(util.GetId("admin", object.InitAdminOrganization))
 	if err != nil {
 		c.ResponseError(err.Error())
 		return

@@ -42,6 +42,8 @@ import (
 const (
 	UserPropertiesWechatUnionId = "wechatUnionId"
 	UserPropertiesWechatOpenId  = "wechatOpenId"
+	InitAdminOrganization       = "beibei"
+	InitAdminName               = "admin"
 )
 
 const UserEnforcerId = "built-in/user-enforcer-built-in"
@@ -1055,7 +1057,7 @@ func AddUser(user *User, lang string) (bool, error) {
 		return false, fmt.Errorf(i18n.Translate(lang, "auth:the organization: %s is not found"), user.Owner)
 	}
 
-	if user.Owner != "built-in" {
+	if user.Owner != "built-in" && !IsInitAdmin(user.Owner, user.Name) {
 		applicationCount, err := GetOrganizationApplicationCount(organization.Owner, organization.Name, "", "")
 		if err != nil {
 			return false, err
@@ -1486,7 +1488,8 @@ func (user *User) GetFriendlyName() string {
 }
 
 func isUserIdGlobalAdmin(userId string) (bool, error) {
-	if strings.HasPrefix(userId, "built-in/") {
+	owner, name := util.GetOwnerAndNameFromIdNoCheck(userId)
+	if IsInitAdmin(owner, name) {
 		return true, nil
 	}
 
@@ -1647,7 +1650,11 @@ func (user *User) IsGlobalAdmin() bool {
 		return false
 	}
 
-	return user.Owner == "built-in"
+	return IsInitAdmin(user.Owner, user.Name) || (user.Owner == "built-in" && IsAppUser(user.Name))
+}
+
+func IsInitAdmin(owner string, name string) bool {
+	return owner == InitAdminOrganization && name == InitAdminName
 }
 
 func (user *User) HasFaceIdImage() bool {

@@ -34,11 +34,12 @@ func InitDb() {
 	if !existed {
 		initBuiltInPermission()
 		initBuiltInProvider()
-		initBuiltInUser()
 		initBuiltInCert()
 		initBuiltInLdap()
 	}
 	initBuiltInApplication()
+	initAdminOrganization()
+	initAdminUser()
 
 	existed = initBuiltInApiModel()
 	if !existed {
@@ -161,8 +162,38 @@ func initBuiltInOrganization() bool {
 	return false
 }
 
-func initBuiltInUser() {
-	user, err := getUser("built-in", "admin")
+func initAdminOrganization() {
+	organization, err := getOrganization("admin", InitAdminOrganization)
+	if err != nil {
+		panic(err)
+	}
+	if organization != nil {
+		return
+	}
+
+	builtInOrganization, err := getOrganization("admin", "built-in")
+	if err != nil {
+		panic(err)
+	}
+	organization = &Organization{}
+	if builtInOrganization != nil {
+		*organization = *builtInOrganization
+	}
+	organization.Owner = "admin"
+	organization.Name = InitAdminOrganization
+	organization.CreatedTime = util.GetCurrentTime()
+	organization.DisplayName = "BeiBei AI"
+	organization.DefaultApplication = ""
+	organization.HasPrivilegeConsent = false
+
+	_, err = AddOrganization(organization)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func initAdminUser() {
+	user, err := getUser(InitAdminOrganization, InitAdminName)
 	if err != nil {
 		panic(err)
 	}
@@ -171,8 +202,8 @@ func initBuiltInUser() {
 	}
 
 	user = &User{
-		Owner:             "built-in",
-		Name:              "admin",
+		Owner:             InitAdminOrganization,
+		Name:              InitAdminName,
 		CreatedTime:       util.GetCurrentTime(),
 		Id:                util.GenerateId(),
 		Type:              "normal-user",
@@ -192,7 +223,7 @@ func initBuiltInUser() {
 		IsDeleted:         false,
 		SignupApplication: "app-built-in",
 		RegisterType:      "Add User",
-		RegisterSource:    "built-in/admin",
+		RegisterSource:    fmt.Sprintf("%s/%s", InitAdminOrganization, InitAdminName),
 		CreatedIp:         "127.0.0.1",
 		Properties:        make(map[string]string),
 	}
@@ -202,11 +233,11 @@ func initBuiltInUser() {
 	}
 
 	if user.Password == "" {
-		fmt.Println("The password of built-in/admin is not set, open BeiBei AI in the browser to set it, or set initAdminPassword before the first start")
+		fmt.Printf("The password of %s/%s is not set, open BeiBei AI in the browser to set it, or set initAdminPassword before the first start\n", InitAdminOrganization, InitAdminName)
 	}
 }
 
-// getInitAdminPassword is the password of built-in/admin when it is created. Without initAdminPassword the
+// getInitAdminPassword is the password of beibei/admin when it is created. Without initAdminPassword the
 // password is left empty and set on the welcome page, the demo site keeps the well-known "123".
 func getInitAdminPassword() string {
 	password := conf.GetConfigString("initAdminPassword")
@@ -216,9 +247,9 @@ func getInitAdminPassword() string {
 	return password
 }
 
-// IsInitAdminPending tells whether built-in/admin has never had a password and is waiting for one on the welcome page
+// IsInitAdminPending tells whether beibei/admin has never had a password and is waiting for one on the welcome page
 func IsInitAdminPending() (bool, error) {
-	user, err := getUser("built-in", "admin")
+	user, err := getUser(InitAdminOrganization, InitAdminName)
 	if err != nil {
 		return false, err
 	}
@@ -226,7 +257,7 @@ func IsInitAdminPending() (bool, error) {
 	return user != nil && !user.IsDeleted && user.Password == "" && user.LastSigninTime == "", nil
 }
 
-// SetInitAdminPassword sets the first password of built-in/admin. It returns false if the password has been set
+// SetInitAdminPassword sets the first password of beibei/admin. It returns false if the password has been set
 // in the meantime, only the first request wins.
 func SetInitAdminPassword(password string, lang string) (bool, error) {
 	isPending, err := IsInitAdminPending()
@@ -237,7 +268,7 @@ func SetInitAdminPassword(password string, lang string) (bool, error) {
 		return false, nil
 	}
 
-	user, err := getUser("built-in", "admin")
+	user, err := getUser(InitAdminOrganization, InitAdminName)
 	if err != nil {
 		return false, err
 	}
