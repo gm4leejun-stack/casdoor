@@ -26,8 +26,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/casdoor/casdoor/conf"
 )
 
 const samoyedSmsProvider = "Samoyed SMS"
@@ -50,12 +48,12 @@ type samoyedSmsRequest struct {
 	Param           map[string]string `json:"param"`
 }
 
-func newSamoyedSmsClient(httpClient *http.Client) (*samoyedSmsClient, error) {
+func newSamoyedSmsClient(smsUrl string, businessCode string, messageEnumCode string, mobileAesKey string, httpClient *http.Client) (*samoyedSmsClient, error) {
 	settings := map[string]string{
-		"smsUrl":             conf.GetConfigString("smsUrl"),
-		"smsBusinessCode":    conf.GetConfigString("smsBusinessCode"),
-		"smsMessageEnumCode": conf.GetConfigString("smsMessageEnumCode"),
-		"smsMobileAesKey":    conf.GetConfigString("smsMobileAesKey"),
+		"smsUrl":             smsUrl,
+		"smsBusinessCode":    businessCode,
+		"smsMessageEnumCode": messageEnumCode,
+		"smsMobileAesKey":    mobileAesKey,
 	}
 	for name, value := range settings {
 		if strings.TrimSpace(value) == "" {

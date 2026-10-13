@@ -11,6 +11,7 @@ import {Loading} from "@/components/common/Loading";
 import {CountryCodeSelect} from "@/components/common/CountryCodeSelect";
 import {CodeEditor} from "@/components/common/CodeEditor";
 import {MultiSelect} from "@/components/common/MultiSelect";
+import {PasswordInput} from "@/components/common/PasswordInput";
 import {SearchableSelect} from "@/components/common/SearchableSelect";
 import {SelectField} from "@/components/common/SelectField";
 import {MapTable} from "@/components/crud/MapTable";
@@ -1140,9 +1141,27 @@ export default function ProviderEditPage() {
           </FormRow>
         </React.Fragment>
       ) : null}
-      <FormRow labelKey="provider:Enable proxy">
-        <Switch checked={!!provider.enableProxy} onCheckedChange={(v) => updateProviderField("enableProxy", v)} />
-      </FormRow>
+      {provider.type === "Samoyed SMS" ? (
+        <React.Fragment>
+          <FormRow label="SMS URL">
+            <Input value={provider.endpoint ?? ""} onChange={(e) => updateProviderField("endpoint", e.target.value)} />
+          </FormRow>
+          <FormRow label="Business Code">
+            <Input value={provider.clientId ?? ""} onChange={(e) => updateProviderField("clientId", e.target.value)} />
+          </FormRow>
+          <FormRow label="Message Enum Code">
+            <Input value={provider.clientId2 ?? ""} onChange={(e) => updateProviderField("clientId2", e.target.value)} />
+          </FormRow>
+          <FormRow label="AES Key">
+            <PasswordInput value={provider.clientSecret ?? ""} onChange={(e) => updateProviderField("clientSecret", e.target.value)} />
+          </FormRow>
+        </React.Fragment>
+      ) : null}
+      {provider.type !== "Samoyed SMS" ? (
+        <FormRow labelKey="provider:Enable proxy">
+          <Switch checked={!!provider.enableProxy} onCheckedChange={(v) => updateProviderField("enableProxy", v)} />
+        </FormRow>
+      ) : null}
       <FormRow labelKey="provider:SMS Test">
         <div className="flex flex-wrap items-center gap-2">
           <div className="w-32 shrink-0">
