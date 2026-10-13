@@ -30,6 +30,8 @@ import (
 
 const samoyedSmsProvider = "Samoyed SMS"
 
+const samoyedSmsUrl = "https://gateway.smyjf.cn:8077/b2b-front/tx-srm-docker-03/NotifyService/sendMessage"
+
 var samoyedMobilePattern = regexp.MustCompile(`^\+861[3-9]\d{9}$`)
 
 type samoyedSmsClient struct {
@@ -48,7 +50,7 @@ type samoyedSmsRequest struct {
 	Param           map[string]string `json:"param"`
 }
 
-func newSamoyedSmsClient(smsUrl string, businessCode string, messageEnumCode string, mobileAesKey string, httpClient *http.Client) (*samoyedSmsClient, error) {
+func newSamoyedSmsClient(smsUrl string, businessCode string, messageEnumCode string, mobileAesKey string) (*samoyedSmsClient, error) {
 	settings := map[string]string{
 		"smsUrl":             smsUrl,
 		"smsBusinessCode":    businessCode,
@@ -59,6 +61,9 @@ func newSamoyedSmsClient(smsUrl string, businessCode string, messageEnumCode str
 		if strings.TrimSpace(value) == "" {
 			return nil, fmt.Errorf("Samoyed SMS: %s is required", name)
 		}
+	}
+	if settings["smsUrl"] != samoyedSmsUrl {
+		return nil, fmt.Errorf("Samoyed SMS: smsUrl must be %s", samoyedSmsUrl)
 	}
 
 	key := []byte(settings["smsMobileAesKey"])
@@ -71,7 +76,12 @@ func newSamoyedSmsClient(smsUrl string, businessCode string, messageEnumCode str
 		businessCode:    settings["smsBusinessCode"],
 		messageEnumCode: settings["smsMessageEnumCode"],
 		mobileAesKey:    key,
-		httpClient:      httpClient,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
 	}, nil
 }
 
