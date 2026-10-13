@@ -106,7 +106,7 @@ func (sub *Subscription) UpdateState() error {
 	}
 
 	if preState != sub.State {
-		_, err := UpdateSubscription(sub.GetId(), sub)
+		err := refreshSubscriptionState(sub)
 		if err != nil {
 			return err
 		}
@@ -361,14 +361,36 @@ func UpdateSubscription(id string, subscription *Subscription) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if s, err := getSubscription(owner, name); err != nil {
+	s := ormer.Engine.NewSession()
+	defer s.Close()
+	if err = s.Begin(); err != nil {
 		return false, err
-	} else if s == nil {
-		return false, nil
 	}
-
-	affected, err := ormer.Engine.ID(core.PK{owner, name}).AllCols().Update(subscription)
+	defer s.Rollback()
+	if err = lockMembershipWrite(s, owner); err != nil {
+		return false, err
+	}
+	if owner != subscription.Owner {
+		if err = lockMembershipWrite(s, subscription.Owner); err != nil {
+			return false, err
+		}
+	}
+	current := new(Subscription)
+	found, err := s.ID(core.PK{owner, name}).Get(current)
+	if err != nil || !found {
+		return false, err
+	}
+	if err = rejectManagedMembership(s, current); err != nil {
+		return false, err
+	}
+	if err = rejectManagedMembership(s, subscription); err != nil {
+		return false, err
+	}
+	affected, err := s.ID(core.PK{owner, name}).AllCols().Update(subscription)
 	if err != nil {
+		return false, err
+	}
+	if err = s.Commit(); err != nil {
 		return false, err
 	}
 
@@ -376,8 +398,23 @@ func UpdateSubscription(id string, subscription *Subscription) (bool, error) {
 }
 
 func AddSubscription(subscription *Subscription) (bool, error) {
-	affected, err := ormer.Engine.Insert(subscription)
+	s := ormer.Engine.NewSession()
+	defer s.Close()
+	if err := s.Begin(); err != nil {
+		return false, err
+	}
+	defer s.Rollback()
+	if err := lockMembershipWrite(s, subscription.Owner); err != nil {
+		return false, err
+	}
+	if err := rejectManagedMembership(s, subscription); err != nil {
+		return false, err
+	}
+	affected, err := s.Insert(subscription)
 	if err != nil {
+		return false, err
+	}
+	if err = s.Commit(); err != nil {
 		return false, err
 	}
 
@@ -385,8 +422,28 @@ func AddSubscription(subscription *Subscription) (bool, error) {
 }
 
 func DeleteSubscription(subscription *Subscription) (bool, error) {
-	affected, err := ormer.Engine.ID(core.PK{subscription.Owner, subscription.Name}).Delete(&Subscription{})
+	s := ormer.Engine.NewSession()
+	defer s.Close()
+	if err := s.Begin(); err != nil {
+		return false, err
+	}
+	defer s.Rollback()
+	if err := lockMembershipWrite(s, subscription.Owner); err != nil {
+		return false, err
+	}
+	current := new(Subscription)
+	found, err := s.ID(core.PK{subscription.Owner, subscription.Name}).Get(current)
+	if err != nil || !found {
+		return false, err
+	}
+	if err = rejectManagedMembership(s, current); err != nil {
+		return false, err
+	}
+	affected, err := s.ID(core.PK{subscription.Owner, subscription.Name}).Delete(&Subscription{})
 	if err != nil {
+		return false, err
+	}
+	if err = s.Commit(); err != nil {
 		return false, err
 	}
 

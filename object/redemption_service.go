@@ -217,6 +217,9 @@ func RedeemMembershipCode(req RedemptionRequest) (*RedemptionResult, error) {
 		return nil, err
 	}
 	rollback := func(err error) (*RedemptionResult, error) { _ = session.Rollback(); return nil, err }
+	if err := lockMembershipWrite(session, req.Owner); err != nil {
+		return rollback(err)
+	}
 	code := &RedemptionCode{Owner: req.Owner, CodeHash: digest}
 	found, err := session.ForUpdate().Get(code)
 	if err != nil || !found {
@@ -230,6 +233,9 @@ func RedeemMembershipCode(req RedemptionRequest) (*RedemptionResult, error) {
 	if batch.Plan != code.Plan || batch.DurationDays != code.DurationDays {
 		return rollback(ErrInvalidRedemptionCode)
 	}
+	if err := rejectManagedMembership(session, &Subscription{Owner: req.Owner, User: req.User, Plan: code.Plan}); err != nil {
+		return rollback(err)
+	}
 	// Conditional claim is the concurrency boundary. Only one transaction can
 	// transition this code from Active to Used. A concurrent redemption gets a
 	// stable unavailable response and cannot extend the subscription twice.
@@ -239,7 +245,7 @@ func RedeemMembershipCode(req RedemptionRequest) (*RedemptionResult, error) {
 		return rollback(ErrInvalidRedemptionCode)
 	}
 	allUserSubscriptions := []*Subscription{}
-	if err = session.Where("owner = ? AND user = ?", req.Owner, req.User).ForUpdate().Find(&allUserSubscriptions); err != nil {
+	if err = session.Where("owner = ? AND "+quoteColumn("user")+" = ?", req.Owner, req.User).ForUpdate().Find(&allUserSubscriptions); err != nil {
 		return rollback(err)
 	}
 	for _, existing := range allUserSubscriptions {
@@ -280,7 +286,7 @@ func RedeemMembershipCode(req RedemptionRequest) (*RedemptionResult, error) {
 
 func findCurrentSubscription(session *xorm.Session, owner, user, plan string) (*Subscription, error) {
 	subs := []*Subscription{}
-	if err := session.Where("owner = ? AND user = ? AND plan = ?", owner, user, plan).ForUpdate().Desc("created_time").Find(&subs); err != nil {
+	if err := session.Where("owner = ? AND "+quoteColumn("user")+" = ? AND plan = ?", owner, user, plan).ForUpdate().Desc("created_time").Find(&subs); err != nil {
 		return nil, err
 	}
 	if len(subs) == 0 {

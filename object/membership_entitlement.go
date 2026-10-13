@@ -42,7 +42,7 @@ func EvaluateMembership(sub *Subscription, now time.Time) MembershipEntitlement 
 	}
 	start, startErr := time.Parse(time.RFC3339, sub.StartTime)
 	end, endErr := time.Parse(time.RFC3339, sub.EndTime)
-	if startErr != nil || endErr != nil || !end.After(start) {
+	if startErr != nil || endErr != nil || end.Before(start) {
 		result.Status = EntitlementError
 		return result
 	}

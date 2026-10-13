@@ -378,6 +378,9 @@ func getObjectFromBody(ctx *context.Context, path string) (string, string) {
 // of their own organization and executed against another organization's object.
 func getObjects(ctx *context.Context) ([]Object, error) {
 	path := ctx.Request.URL.Path
+	if path == "/api/get-membership-customer-history" {
+		return []Object{{Owner: object.SmyMembershipOwner}}, nil
+	}
 	if path == "/api/mcp" && ctx.Request.Method == http.MethodPost {
 		objects, err := getMcpObjects(ctx)
 		if err != nil {
@@ -520,6 +523,10 @@ func getImpersonateUser(ctx *context.Context, subOwner, subName, username string
 
 func ApiFilter(ctx *context.Context) {
 	urlPath := getUrlPath(ctx)
+	// This exact merchant callback authenticates its raw envelope in the controller.
+	if urlPath == "/smy/create/rightCard" && ctx.Request.Method == http.MethodPost {
+		return
+	}
 	if expected := os.Getenv("CASDOOR_MEMBERSHIP_SERVICE_TOKEN"); urlPath == "/api/get-membership-entitlement" && expected != "" && ctx.Input.Header("X-Membership-Service-Token") == expected {
 		return
 	}

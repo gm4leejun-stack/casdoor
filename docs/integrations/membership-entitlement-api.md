@@ -74,4 +74,4 @@ GET /api/get-membership-entitlement?owner=gundam&plan=gundam-pro&issuer=<issuer>
 
 ## 后续会员维护接口约束
 
-后续对接萨摩耶权益业务的会员维护接口也固定维护 `owner=beibei`、`plan=beibei-pro`，不允许外部请求选择 owner 或 Plan。该维护接口尚未进入设计和实现阶段；需先完成 Casdoor 会员规则梳理，再另行定义写入、幂等和续期规则。
+萨摩耶会员维护接口 `POST /smy/create/rightCard` 已实现，固定维护 `owner=beibei`、`plan=beibei-pro`，不允许外部请求选择 owner 或 Plan。开通、退款、幂等及客服操作档见 [维护接口说明](../smy-membership-api.md)。消费端缓存不在本次维护范围。

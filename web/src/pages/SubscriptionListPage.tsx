@@ -1,5 +1,6 @@
 import i18next from "i18next";
 import {Link} from "react-router-dom";
+import {Button} from "@/components/ui/button";
 import {CrudListPage} from "@/components/crud/CrudListPage";
 import {dateColumn, linkColumn, organizationColumn, textColumn} from "@/components/crud/columns";
 import type {ColumnDef} from "@/components/crud/types";
@@ -92,6 +93,9 @@ export default function SubscriptionListPage() {
   return (
     <CrudListPage
       title={i18next.t("general:Subscriptions")}
+      toolbar={Setting.isAdminUser(account) || (account?.owner === "beibei" && account?.isAdmin === true) ? (
+        <Button variant="outline" asChild><Link to="/membership-history">客户会员操作档</Link></Button>
+      ) : undefined}
       columns={columns}
       deps={[organizationName]}
       fetch={(q) =>

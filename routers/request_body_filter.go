@@ -64,6 +64,9 @@ func RequestBodyFilter(ctx *context.Context) {
 // getRequestBodyLimit applies the same limits Beego enforces after the filters, the body
 // is read into memory here before Beego gets to check it
 func getRequestBodyLimit(ctx *context.Context) int64 {
+	if ctx.Request.URL.Path == "/smy/create/rightCard" {
+		return 65536
+	}
 	if ctx.Input.IsUpload() {
 		return web.BConfig.MaxUploadSize
 	}

@@ -447,6 +447,11 @@ func (a *Ormer) createTable() {
 	if err != nil {
 		panic(err)
 	}
+	for _, table := range []interface{}{new(SmyMembershipCustomer), new(SmyMembershipOrderRecord), new(SmyMembershipOperation)} {
+		if err = a.Engine.Sync2(table); err != nil {
+			panic(err)
+		}
+	}
 	err = a.Engine.Sync2(new(RedemptionBatch))
 	if err != nil {
 		panic(err)
