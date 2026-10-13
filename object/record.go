@@ -44,7 +44,7 @@ var secretRecordKeys = []string{
 // secretRecordKeyPatterns match the per-provider OAuth tokens kept in a user's properties
 var secretRecordKeyPatterns = []string{`oauth_[^"&=]*_(?:accessToken|refreshToken)`}
 
-var secretRecordQueries = append([]string{"id_token_hint"}, secretRecordKeys...)
+var secretRecordQueries = append([]string{"id_token_hint", "ticket"}, secretRecordKeys...)
 
 // alwaysLoggedActions lists the actions that are always recorded, even for GET
 // requests when "logPostOnly" is enabled. These endpoints accept GET by design

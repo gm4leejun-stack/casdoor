@@ -308,6 +308,8 @@ func InitAPI() {
 	web.Router("/api/get-my-membership-entitlement", &controllers.ApiController{}, "GET:GetMyMembershipEntitlement")
 	web.Router("/api/get-membership-entitlement", &controllers.ApiController{}, "GET:GetMembershipEntitlement")
 	web.Router("/smy/create/rightCard", &controllers.ApiController{}, "POST:SmyMaintainMembership")
+	web.Router("/smy/unionLogin", &controllers.ApiController{}, "POST:SmyUnionLogin")
+	web.Router("/smy/unionLogin/exchange", &controllers.ApiController{}, "GET:SmyUnionLoginExchange")
 	web.Router("/api/get-membership-customer-history", &controllers.ApiController{}, "GET:GetMembershipCustomerHistory")
 	web.Router("/api/get-my-redemptions", &controllers.ApiController{}, "GET:GetMyRedemptions")
 	web.Router("/api/get-redemptions", &controllers.ApiController{}, "GET:GetRedemptions")

@@ -27,7 +27,7 @@ import (
 
 func AutoSigninFilter(ctx *context.Context) {
 	urlPath := ctx.Request.URL.Path
-	if urlPath == "/smy/create/rightCard" {
+	if urlPath == "/smy/create/rightCard" || urlPath == "/smy/unionLogin" || urlPath == "/smy/unionLogin/exchange" {
 		return
 	}
 	if strings.HasPrefix(urlPath, "/api/login/oauth/access_token") {

@@ -18,7 +18,7 @@ import (
 type SmyMembershipCustomer struct {
 	UserID   string `xorm:"'user_id' varchar(100) pk" json:"userId"`
 	UserName string `xorm:"varchar(255) notnull unique" json:"userName"`
-	Mobile   string `xorm:"varchar(100) notnull unique" json:"mobile"`
+	Mobile   string `xorm:"varchar(100) notnull" json:"mobile"`
 	UniqueID string `xorm:"'unique_id' varchar(100) notnull unique" json:"uniqueId"`
 	Sequence int64  `json:"sequence"`
 }
@@ -44,11 +44,13 @@ type SmyMembershipOperation struct {
 }
 
 type SmyMembershipHistory struct {
-	Customer         SmyMembershipCustomer      `json:"customer"`
-	Subscription     *Subscription              `json:"subscription"`
-	Orders           []*SmyMembershipOrderState `json:"orders"`
-	Operations       []SmyMembershipOperation   `json:"operations"`
-	ConsistencyError string                     `json:"consistencyError,omitempty"`
+	Candidates            []SmyMembershipCustomer    `json:"candidates,omitempty"`
+	MembershipInitialized bool                       `json:"membershipInitialized"`
+	Customer              SmyMembershipCustomer      `json:"customer"`
+	Subscription          *Subscription              `json:"subscription"`
+	Orders                []*SmyMembershipOrderState `json:"orders"`
+	Operations            []SmyMembershipOperation   `json:"operations"`
+	ConsistencyError      string                     `json:"consistencyError,omitempty"`
 }
 
 var ErrManagedMembership = errors.New("会员已由操作档托管，禁止绕过操作档修改、删除或新增同套餐订阅")
@@ -74,6 +76,11 @@ func lockSmyOrganization(session *xorm.Session) (*Organization, error) {
 	return organizations[0], nil
 }
 
+// LockSmyOrganization serializes identity and membership writes across instances.
+func LockSmyOrganization(session *xorm.Session) (*Organization, error) {
+	return lockSmyOrganization(session)
+}
+
 func smyState(start, end string, now time.Time) SubscriptionState {
 	startsAt, startErr := smyTime(start)
 	expiresAt, endErr := smyTime(end)
@@ -89,34 +96,24 @@ func smyState(start, end string, now time.Time) SubscriptionState {
 	return SubStateActive
 }
 
-func smyLockPhoneUser(session *xorm.Session, mobile string) (*User, error) {
+func smyLockBoundUser(session *xorm.Session, customer *SmyMembershipCustomer) (*User, error) {
 	users := []*User{}
-	if err := session.Where("owner = ? AND phone = ?", SmyMembershipOwner, mobile).ForUpdate().Find(&users); err != nil {
+	if err := session.Where("owner = ? AND id = ?", SmyMembershipOwner, customer.UserID).ForUpdate().Find(&users); err != nil {
 		return nil, err
 	}
-	if len(users) > 1 {
-		return nil, fmt.Errorf("手机号 %s 在 beibei 下对应多个用户，停止维护", mobile)
-	}
-	if len(users) == 0 {
-		return nil, nil
+	if len(users) != 1 {
+		return nil, fmt.Errorf("萨摩耶绑定的 Casdoor 用户不存在或 ID 不唯一，实际 %d 条", len(users))
 	}
 	user := users[0]
-	if user.Id == "" || user.IsDeleted || user.IsForbidden {
-		return nil, errors.New("会员用户 ID 缺失或账号已删除/禁用")
-	}
-	matchingIDs := []*User{}
-	if err := session.Where("owner = ? AND id = ?", SmyMembershipOwner, user.Id).ForUpdate().Find(&matchingIDs); err != nil {
-		return nil, err
-	}
-	if len(matchingIDs) != 1 {
-		return nil, errors.New("beibei 下用户 ID 不唯一，停止维护")
+	if user.Id == "" || user.Name != customer.UserName || user.IsDeleted || user.IsForbidden {
+		return nil, errors.New("萨摩耶绑定与账号不一致，或账号已删除/禁用")
 	}
 	return user, nil
 }
 
-func smyCreateUser(session *xorm.Session, org *Organization, req SmyMembershipInput) (*User, error) {
+func smyCreateUser(session *xorm.Session, org *Organization, now time.Time) (*User, error) {
 	id := util.GenerateId()
-	user := &User{Owner: SmyMembershipOwner, Name: "smy_" + id, Id: id, Type: "normal-user", DisplayName: req.Mobile, Phone: req.Mobile, CountryCode: "CN", CreatedTime: smyFormat(req.Now), UpdatedTime: smyFormat(req.Now), Avatar: org.DefaultAvatar, BalanceCurrency: org.BalanceCurrency, SignupApplication: org.DefaultApplication, RegisterSource: "Samoyed", PasswordType: org.PasswordType}
+	user := &User{Owner: SmyMembershipOwner, Name: "smy_" + id, Id: id, Type: "normal-user", DisplayName: "萨摩耶用户", CreatedTime: smyFormat(now), UpdatedTime: smyFormat(now), Avatar: org.DefaultAvatar, BalanceCurrency: org.BalanceCurrency, SignupApplication: org.DefaultApplication, RegisterSource: "Samoyed", PasswordType: org.PasswordType}
 	if user.BalanceCurrency == "" {
 		user.BalanceCurrency = "USD"
 	}
@@ -131,26 +128,40 @@ func smyCreateUser(session *xorm.Session, org *Organization, req SmyMembershipIn
 	return user, nil
 }
 
-func smyBindCustomer(session *xorm.Session, user *User, req SmyMembershipInput) (*SmyMembershipCustomer, bool, error) {
+// ResolveSmyIdentity must run inside the caller's transaction. It does not inspect
+// phone numbers or membership, and new bindings have no membership operations.
+func ResolveSmyIdentity(session *xorm.Session, uniqueID string, now time.Time) (*User, *SmyMembershipCustomer, error) {
+	if uniqueID == "" || len(uniqueID) > 100 || strings.TrimSpace(uniqueID) != uniqueID {
+		return nil, nil, errors.New("uniqueId 必须非空且不超过100字节")
+	}
+	org, err := lockSmyOrganization(session)
+	if err != nil {
+		return nil, nil, err
+	}
 	customers := []SmyMembershipCustomer{}
-	if err := session.Where("user_id = ? OR mobile = ? OR unique_id = ?", user.Id, req.Mobile, req.UniqueID).ForUpdate().Find(&customers); err != nil {
-		return nil, false, err
+	if err := session.Where("unique_id = ?", uniqueID).ForUpdate().Find(&customers); err != nil {
+		return nil, nil, err
 	}
 	if len(customers) > 1 {
-		return nil, false, errors.New("手机号、萨摩耶标识或用户 ID 对应不同客户，停止维护")
+		return nil, nil, errors.New("uniqueId 对应多个客户，停止处理")
 	}
 	if len(customers) == 1 {
 		customer := &customers[0]
-		if customer.UserID != user.Id || customer.UserName != user.Name || customer.Mobile != req.Mobile || customer.UniqueID != req.UniqueID {
-			return nil, false, errors.New("客户身份绑定不一致，禁止重新绑定")
-		}
-		return customer, false, nil
+		user, err := smyLockBoundUser(session, customer)
+		return user, customer, err
 	}
-	customer := &SmyMembershipCustomer{UserID: user.Id, UserName: user.Name, Mobile: req.Mobile, UniqueID: req.UniqueID}
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+	user, err := smyCreateUser(session, org, now)
+	if err != nil {
+		return nil, nil, err
+	}
+	customer := &SmyMembershipCustomer{UserID: user.Id, UserName: user.Name, UniqueID: uniqueID}
 	if _, err := session.Insert(customer); err != nil {
-		return nil, false, err
+		return nil, nil, err
 	}
-	return customer, true, nil
+	return user, customer, nil
 }
 
 func smyLoadSubscriptions(session *xorm.Session, userName string) ([]*Subscription, error) {
@@ -208,7 +219,7 @@ func smyReplay(customer *SmyMembershipCustomer, operations []SmyMembershipOperat
 		}
 		req := operation.Input
 		req.Now = at
-		if req.Mobile != customer.Mobile || req.UniqueID != customer.UniqueID || req.OrderNo != operation.OrderNo {
+		if req.UniqueID != customer.UniqueID || req.OrderNo != operation.OrderNo {
 			return snapshot, fmt.Errorf("操作档序号 %d 订单身份不匹配", operation.Sequence)
 		}
 		change, err := ApplySmyMembershipRequest(snapshot, req)
@@ -316,7 +327,7 @@ func ProcessSmyMembership(req SmyMembershipInput, beforeCommit func() error) err
 		return err
 	}
 	defer session.Rollback()
-	organization, err := lockSmyOrganization(session)
+	_, err := lockSmyOrganization(session)
 	if err != nil {
 		return err
 	}
@@ -334,17 +345,7 @@ func ProcessSmyMembership(req SmyMembershipInput, beforeCommit func() error) err
 	if !found || !plan.IsEnabled {
 		return errors.New("套餐 beibei/beibei-pro 不存在或未启用")
 	}
-	user, err := smyLockPhoneUser(session, req.Mobile)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		user, err = smyCreateUser(session, organization, req)
-		if err != nil {
-			return err
-		}
-	}
-	customer, isNew, err := smyBindCustomer(session, user, req)
+	user, customer, err := ResolveSmyIdentity(session, req.UniqueID, req.Now)
 	if err != nil {
 		return err
 	}
@@ -360,12 +361,23 @@ func ProcessSmyMembership(req SmyMembershipInput, beforeCommit func() error) err
 	if err != nil {
 		return err
 	}
-	if isNew {
+	operations, err := smyLoadOperations(session, customer.UserID)
+	if err != nil {
+		return err
+	}
+	if customer.Sequence == 0 && len(operations) == 0 {
+		orders, err := session.Where("user_id = ?", customer.UserID).Count(new(SmyMembershipOrderRecord))
+		if err != nil {
+			return err
+		}
+		if orders != 0 {
+			return errors.New("客户尚无会员操作档但存在订单，停止维护")
+		}
 		if err := smyInitialize(session, customer, req, subscriptions); err != nil {
 			return err
 		}
 	}
-	operations, err := smyLoadOperations(session, customer.UserID)
+	operations, err = smyLoadOperations(session, customer.UserID)
 	if err != nil {
 		return err
 	}
@@ -483,10 +495,10 @@ func smyPersistChange(session *xorm.Session, customer *SmyMembershipCustomer, re
 
 func GetSmyMembershipHistory(field, value string) (*SmyMembershipHistory, error) {
 	value = strings.TrimSpace(value)
-	columns := map[string]string{"mobile": "mobile", "userId": "user_id", "orderNo": "order_no"}
+	columns := map[string]string{"mobile": "mobile", "uniqueId": "unique_id", "userId": "user_id", "orderNo": "order_no"}
 	column, valid := columns[field]
 	if !valid || value == "" || len(value) > 100 {
-		return nil, errors.New("请使用完整手机号、用户 ID 或订单号查询")
+		return nil, errors.New("请使用完整 uniqueId、历史手机号、用户 ID 或订单号查询")
 	}
 	session := ormer.Engine.NewSession()
 	defer session.Close()
@@ -509,13 +521,50 @@ func GetSmyMembershipHistory(field, value string) (*SmyMembershipHistory, error)
 		}
 		column, value = "user_id", order.UserID
 	}
-	found, err := session.Where(column+" = ?", value).Get(customer)
+	customers := []SmyMembershipCustomer{}
+	var err error
+	if field == "mobile" {
+		// Contact numbers are historical search clues only. Include every order
+		// and operation input so a changed number can still locate the customer.
+		err = session.Find(&customers)
+		if err == nil {
+			inputs := []SmyMembershipOperation{}
+			if err := session.Cols("user_id", "input").Find(&inputs); err != nil {
+				return nil, err
+			}
+			matchedIDs := map[string]bool{}
+			for _, operation := range inputs {
+				if operation.Input.Mobile == value {
+					matchedIDs[operation.UserID] = true
+				}
+			}
+			matched := []SmyMembershipCustomer{}
+			for _, candidate := range customers {
+				if candidate.Mobile == value || matchedIDs[candidate.UserID] {
+					matched = append(matched, candidate)
+				}
+			}
+			customers = matched
+		}
+	} else {
+		err = session.Where(column+" = ?", value).Find(&customers)
+	}
 	if err != nil {
 		return nil, err
 	}
-	if !found {
+	if len(customers) == 0 {
 		return nil, errors.New("未找到客户会员操作档")
 	}
+	if len(customers) > 1 {
+		if field != "mobile" {
+			return nil, errors.New("查询标识对应多个客户，客户绑定异常")
+		}
+		if err := session.Commit(); err != nil {
+			return nil, err
+		}
+		return &SmyMembershipHistory{Candidates: customers}, nil
+	}
+	*customer = customers[0]
 	user := &User{}
 	userFound, err := session.ID(core.PK{SmyMembershipOwner, customer.UserName}).ForUpdate().Get(user)
 	if err != nil {
@@ -529,7 +578,7 @@ func GetSmyMembershipHistory(field, value string) (*SmyMembershipHistory, error)
 	if err != nil {
 		return nil, err
 	}
-	history := &SmyMembershipHistory{Customer: *customer, Operations: operations, Orders: []*SmyMembershipOrderState{}}
+	history := &SmyMembershipHistory{Customer: *customer, MembershipInitialized: customer.Sequence > 0 && len(operations) > 0, Operations: operations, Orders: []*SmyMembershipOrderState{}}
 	if len(subscriptions) > 0 {
 		history.Subscription = subscriptions[0]
 	}
@@ -560,12 +609,18 @@ func GetSmyMembershipHistory(field, value string) (*SmyMembershipHistory, error)
 			history.Orders = append(history.Orders, &rows[index].State)
 		}
 	}
-	if !userFound || user.Id != customer.UserID || user.Phone != customer.Mobile {
+	if !userFound || user.Id != customer.UserID {
 		history.ConsistencyError = "客户绑定与 Casdoor 用户不一致"
 	}
-	snapshot, replayErr := smyReplay(customer, operations)
-	if replayErr == nil {
-		replayErr = smyCheckStoredState(session, customer, snapshot, subscriptions)
+	var replayErr error
+	if customer.Sequence == 0 && len(operations) == 0 && len(rows) == 0 {
+		// An identity-only binding is valid and not a managed membership.
+	} else {
+		var snapshot MembershipSnapshot
+		snapshot, replayErr = smyReplay(customer, operations)
+		if replayErr == nil {
+			replayErr = smyCheckStoredState(session, customer, snapshot, subscriptions)
+		}
 	}
 	if replayErr != nil {
 		if history.ConsistencyError != "" {

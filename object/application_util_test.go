@@ -14,7 +14,41 @@
 
 package object
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+func TestSmyUnionLoginRequestWindowAndToken(t *testing.T) {
+	now := time.Date(2026, 11, 15, 2, 0, 0, 0, time.UTC)
+	valid := SmyUnionLoginRequest{UniqueID: "customer-1", MerchantNo: "merchant", RequestID: "REQ123", RequestTime: now}
+	if err := validateSmyUnionLoginRequest(valid, now); err != nil {
+		t.Fatal(err)
+	}
+	for _, at := range []time.Time{time.Time{}, now.Add(-SmyUnionLoginLifetime), now.Add(SmyUnionLoginLifetime + time.Second)} {
+		req := valid
+		req.RequestTime = at
+		if err := validateSmyUnionLoginRequest(req, now); err == nil {
+			t.Fatalf("accepted expired/future request time %s", at)
+		}
+	}
+	for _, id := range []string{"", "has space", "a-b", "123456789012345678901234567890123"} {
+		req := valid
+		req.RequestID = id
+		if err := validateSmyUnionLoginRequest(req, now); err == nil {
+			t.Fatalf("accepted invalid request ID %q", id)
+		}
+	}
+	token, err := generateMagicLinkToken()
+	if err != nil || !smyUnionTokenValid(token) || len(HashMagicLinkSecret(token)) != 64 {
+		t.Fatalf("invalid generated token/hash: %v", err)
+	}
+	for _, bad := range []string{"", token + "=", token[:42], token[:42] + "/"} {
+		if smyUnionTokenValid(bad) {
+			t.Fatalf("accepted malformed token %q", bad)
+		}
+	}
+}
 
 func TestRedirectUriMatchesPattern(t *testing.T) {
 	tests := []struct {

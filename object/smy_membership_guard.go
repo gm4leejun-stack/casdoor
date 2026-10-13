@@ -1,6 +1,7 @@
 package object
 
 import (
+	"errors"
 	"time"
 
 	"github.com/xorm-io/core"
@@ -21,7 +22,20 @@ func rejectManagedMembership(s *xorm.Session, sub *Subscription) error {
 		return err
 	}
 	if found {
-		return ErrManagedMembership
+		operations, err := s.Where("user_id = ?", customer.UserID).Count(new(SmyMembershipOperation))
+		if err != nil {
+			return err
+		}
+		if customer.Sequence > 0 || operations > 0 {
+			return ErrManagedMembership
+		}
+		orders, err := s.Where("user_id = ?", customer.UserID).Count(new(SmyMembershipOrderRecord))
+		if err != nil {
+			return err
+		}
+		if customer.Sequence != 0 || orders != 0 {
+			return errors.New("客户会员操作档状态异常，禁止直接修改订阅")
+		}
 	}
 	return nil
 }

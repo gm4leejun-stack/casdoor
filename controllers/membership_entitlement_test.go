@@ -7,9 +7,116 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/casdoor/casdoor/object"
 )
+
+func TestSmyUnionLoginAccountSafety(t *testing.T) {
+	organization := &object.Organization{Name: object.SmyMembershipOwner}
+	if err := smyUnionAccountSafety(&object.User{Type: "normal-user"}, organization); err != nil {
+		t.Fatal(err)
+	}
+	for _, user := range []*object.User{
+		{Type: "normal-user", PreferredMfaType: object.TotpType},
+		{Type: "normal-user", NeedUpdatePassword: true},
+		{Type: "normal-user", IsAdmin: true},
+		{Type: "paid-user"},
+	} {
+		if err := smyUnionAccountSafety(user, organization); err == nil {
+			t.Fatalf("unsafe account accepted: %+v", user)
+		}
+	}
+	organization.MfaItems = []*object.MfaItem{{Name: object.TotpType, Rule: "Required"}}
+	if err := smyUnionAccountSafety(&object.User{Type: "normal-user"}, organization); err == nil {
+		t.Fatal("required MFA setup bypassed")
+	}
+}
+
+func TestSmyUnionLoginProtocol(t *testing.T) {
+	private, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys := &smyProtocolKeys{merchantNo: "test-merchant", publicKey: &private.PublicKey, privateKey: private}
+	now := time.Date(2026, 10, 13, 7, 0, 0, 0, time.UTC)
+	for _, version := range []string{"2.0", "3.1"} {
+		for _, business := range []string{
+			`{"uniqueId":"customer"}`,
+			`{"uniqueId":"customer","userMd5Info":{}}`,
+			`{"uniqueId":"customer","userMd5Info":{"mobile":"not-a-phone"}}`,
+			`{"uniqueId":"customer","userMd5Info":{"mobile":123}}`,
+		} {
+			envelope := map[string]string{"version": version, "merchantNo": keys.merchantNo, "req_seq_number": "seq1", "timestamp": "2026-10-13 15:00:00", "biz_content": business}
+			if version == "3.1" {
+				key := []byte("0123456789abcdef")
+				encrypted, _ := smyAES([]byte(business), key, true)
+				secret, _ := rsa.EncryptPKCS1v15(rand.Reader, keys.publicKey, key)
+				envelope["biz_content"], envelope["secretKey"] = base64.StdEncoding.EncodeToString(encrypted), base64.StdEncoding.EncodeToString(secret)
+			}
+			envelope["sign"], err = smySign(envelope, private)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body, _ := json.Marshal(envelope)
+			req, actualVersion, err := smyDecodeUnionLogin(body, keys, now)
+			if err != nil || actualVersion != version || req.UniqueID != "customer" || !req.RequestTime.Equal(now) {
+				t.Fatalf("decode %s: %+v %v", version, req, err)
+			}
+			if _, _, err = smyDecodeUnionLogin(body, keys, now.Add(5*time.Minute)); err == nil {
+				t.Fatal("expired request accepted")
+			}
+			envelope["biz_content"] += " "
+			body, _ = json.Marshal(envelope)
+			if _, _, err = smyDecodeUnionLogin(body, keys, now); err == nil {
+				t.Fatal("tampered raw business accepted")
+			}
+		}
+		body, err := smyBusinessResponse(keys, version, "000000", "Success", map[string]string{"h5Url": "https://example.com/link"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		envelope, err := smyParseEnvelope(body)
+		if err != nil || smyVerify(envelope, keys.publicKey) != nil {
+			t.Fatal("response signature failed", err)
+		}
+		plain := []byte(envelope["biz_content"])
+		if version == "3.1" {
+			secret, _ := base64.StdEncoding.DecodeString(envelope["secretKey"])
+			key, err := rsa.DecryptPKCS1v15(rand.Reader, private, secret)
+			if err != nil {
+				t.Fatal(err)
+			}
+			encrypted, _ := base64.StdEncoding.DecodeString(envelope["biz_content"])
+			plain, err = smyAES(encrypted, key, false)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		if !bytes.Contains(plain, []byte("h5Url")) || !bytes.Contains(plain, []byte("000000")) {
+			t.Fatal("unexpected union login response")
+		}
+	}
+	for _, business := range []string{
+		`{}`, `{"uniqueId":null}`, `{"uniqueId":12}`,
+		`{"uniqueId":"customer","uniqueId":"other"}`,
+		`{"uniqueId":" customer"}`, `{"uniqueId":"customer"}{}`,
+	} {
+		if _, err := smyUnionUniqueID([]byte(business)); err == nil {
+			t.Fatalf("invalid business accepted: %s", business)
+		}
+	}
+	for _, value := range []string{"https://example.com", "http://localhost:8000", "http://127.0.0.1:8000"} {
+		if _, err := smyUnionURL(value); err != nil {
+			t.Fatal(value, err)
+		}
+	}
+	for _, value := range []string{"", "//example.com", "http://example.com", "https://user:pass@example.com", "https://example.com?next=x", "https://example.com?", "https://example.com#x"} {
+		if _, err := smyUnionURL(value); err == nil {
+			t.Fatal("unsafe URL accepted", value)
+		}
+	}
+}
 
 func TestSmyProtocolRoundTripAndTampering(t *testing.T) {
 	private, err := rsa.GenerateKey(rand.Reader, 2048)

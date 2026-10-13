@@ -237,7 +237,7 @@ func StaticFilter(ctx *context.Context) {
 		http.ServeContent(ctx.ResponseWriter, ctx.Request, "acme-challenge", time.Now(), strings.NewReader("content"))
 	}
 
-	if urlPath == "/smy/create/rightCard" || strings.HasPrefix(urlPath, "/api/") || strings.HasPrefix(urlPath, "/.well-known/") {
+	if urlPath == "/smy/create/rightCard" || urlPath == "/smy/unionLogin" || urlPath == "/smy/unionLogin/exchange" || strings.HasPrefix(urlPath, "/api/") || strings.HasPrefix(urlPath, "/.well-known/") {
 		return
 	}
 	if serveAuthCallbackHandlerScript(ctx) {

@@ -152,7 +152,11 @@ func smyParseEnvelope(body []byte) (map[string]string, error) {
 }
 
 func smyResponse(keys *smyProtocolKeys, version, code, msg, status string) ([]byte, error) {
-	business, err := json.Marshal(map[string]interface{}{"code": code, "msg": msg, "data": map[string]string{"status": status}})
+	return smyBusinessResponse(keys, version, code, msg, map[string]string{"status": status})
+}
+
+func smyBusinessResponse(keys *smyProtocolKeys, version, code, msg string, data interface{}) ([]byte, error) {
+	business, err := json.Marshal(map[string]interface{}{"code": code, "msg": msg, "data": data})
 	if err != nil {
 		return nil, err
 	}

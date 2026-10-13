@@ -447,7 +447,10 @@ func (a *Ormer) createTable() {
 	if err != nil {
 		panic(err)
 	}
-	for _, table := range []interface{}{new(SmyMembershipCustomer), new(SmyMembershipOrderRecord), new(SmyMembershipOperation)} {
+	if err = MigrateSmyIdentityIndexes(a.Engine); err != nil {
+		panic(err)
+	}
+	for _, table := range []interface{}{new(SmyMembershipCustomer), new(SmyMembershipOrderRecord), new(SmyMembershipOperation), new(SmyUnionLoginTicket)} {
 		if err = a.Engine.Sync2(table); err != nil {
 			panic(err)
 		}

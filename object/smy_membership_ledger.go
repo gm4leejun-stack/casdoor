@@ -156,7 +156,7 @@ func ValidateSmyMembershipSnapshot(s MembershipSnapshot) error {
 		}
 	}
 	seen := map[string]bool{}
-	var identityMobile, identityUnique string
+	var identityUnique string
 	var priorEnd time.Time
 	if s.BaseExpiresAt != "" {
 		priorEnd, _ = smyTime(s.BaseExpiresAt)
@@ -166,9 +166,9 @@ func ValidateSmyMembershipSnapshot(s MembershipSnapshot) error {
 			return fmt.Errorf("订单为空或重复")
 		}
 		seen[order.OrderNo] = true
-		if identityMobile == "" {
-			identityMobile, identityUnique = order.Mobile, order.UniqueID
-		} else if identityMobile != order.Mobile || identityUnique != order.UniqueID {
+		if identityUnique == "" {
+			identityUnique = order.UniqueID
+		} else if identityUnique != order.UniqueID {
 			return fmt.Errorf("操作档订单客户身份不一致")
 		}
 		req := SmyMembershipInput{OrderNo: order.OrderNo, UniqueID: order.UniqueID, Mobile: order.Mobile, ProductType: order.ProductType, ProductCode: order.ProductCode, PeriodTime: order.PeriodTime, OrderStatus: order.Status}
@@ -271,7 +271,7 @@ func ApplySmyMembershipRequest(snapshot MembershipSnapshot, req SmyMembershipInp
 	for i, order := range next.Orders {
 		if order.OrderNo == req.OrderNo {
 			found = i
-			if order.Mobile != req.Mobile || order.UniqueID != req.UniqueID || order.ProductType != req.ProductType || order.ProductCode != req.ProductCode {
+			if order.UniqueID != req.UniqueID || order.ProductType != req.ProductType || order.ProductCode != req.ProductCode {
 				return nil, fmt.Errorf("订单 %s 通知参数与原订单不一致", req.OrderNo)
 			}
 			if req.OrderStatus == SmyOrderActive && order.Granted && order.PeriodTime != req.PeriodTime {

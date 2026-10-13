@@ -7,6 +7,38 @@ import (
 	"time"
 )
 
+func TestSmyIdentityIgnoresMobileChanges(t *testing.T) {
+	now := time.Date(2026, 10, 15, 2, 0, 0, 0, time.UTC)
+	input := SmyMembershipInput{OrderNo: "A", UniqueID: "stable", Mobile: "13800000001", ProductType: "1", ProductCode: "pro", PeriodTime: "3", OrderStatus: SmyOrderActive, Now: now}
+	first, err := ApplySmyMembershipRequest(MembershipSnapshot{SubscriptionName: "test"}, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	input.Mobile = "13900000001"
+	duplicate, err := ApplySmyMembershipRequest(first.After, input)
+	if err != nil || !duplicate.Duplicate {
+		t.Fatalf("mobile change must not invalidate duplicate: %v", err)
+	}
+	input.OrderNo = "B"
+	second, err := ApplySmyMembershipRequest(first.After, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	input.OrderNo, input.OrderStatus, input.Mobile = "A", SmyOrderRefunded, "13700000001"
+	input.Now = now.AddDate(0, 0, 10)
+	refund, err := ApplySmyMembershipRequest(second.After, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refund.After.Orders[0].Mobile != "13800000001" || refund.After.Orders[1].Mobile != "13900000001" {
+		t.Fatal("original order phone history was rewritten")
+	}
+	input.UniqueID = "different"
+	if _, err := ApplySmyMembershipRequest(refund.After, input); err == nil {
+		t.Fatal("order identity changed")
+	}
+}
+
 func TestSmyCalendarRefundLifecycle(t *testing.T) {
 	at := func(value string) time.Time {
 		t.Helper()

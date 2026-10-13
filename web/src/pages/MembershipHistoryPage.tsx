@@ -43,6 +43,7 @@ interface MembershipOperation {
 }
 
 interface MembershipHistory {
+  membershipInitialized: boolean;
   customer: {userId: string; userName: string; mobile: string; uniqueId: string};
   subscription: {startTime: string; endTime: string; state: string} | null;
   orders: MembershipOrder[];
@@ -104,7 +105,8 @@ function OrderChanges({operation}: {operation: MembershipOperation}) {
 
 export default function MembershipHistoryPage() {
   const {account} = useAccount();
-  const [field, setField] = useState<MembershipHistoryField>("mobile");
+  const [field, setField] = useState<MembershipHistoryField>("uniqueId");
+  const [candidates, setCandidates] = useState<MembershipHistory["customer"][]>([]);
   const [value, setValue] = useState("");
   const [history, setHistory] = useState<MembershipHistory | null>(null);
   const [error, setError] = useState("");
@@ -114,17 +116,24 @@ export default function MembershipHistoryPage() {
 
   async function search(event: FormEvent) {
     event.preventDefault();
-    if (!value.trim() || loading) return;
+    await loadHistory(field, value);
+  }
+
+  async function loadHistory(searchField: MembershipHistoryField, searchValue: string) {
+    if (!searchValue.trim() || loading) return;
     setHistory(null);
+    setCandidates([]);
     setError("");
     setExpanded(null);
     setLoading(true);
     try {
-      const result = await MembershipBackend.getMembershipCustomerHistory(field, value.trim());
+      const result = await MembershipBackend.getMembershipCustomerHistory(searchField, searchValue.trim());
       if (result.status !== "ok") {
         setError(result.msg || "查询失败");
       } else if (!result.data) {
         setError("未找到会员操作档");
+      } else if (result.data.candidates?.length) {
+        setCandidates(result.data.candidates);
       } else {
         setHistory({
           ...result.data,
@@ -149,12 +158,13 @@ export default function MembershipHistoryPage() {
           <p className="text-sm text-muted-foreground">固定套餐 beibei / beibei-pro。按客户操作序号正序展示；所有时间为北京时间。此页只读，不修改会员。</p>
           <form onSubmit={search} className="flex flex-wrap gap-2">
             <select aria-label="查询方式" className="h-9 rounded-md border bg-background px-3 text-sm" value={field} disabled={loading} onChange={e => setField(e.target.value as MembershipHistoryField)}>
-              <option value="mobile">手机号</option><option value="userId">Casdoor 用户 ID</option><option value="orderNo">萨摩耶订单号</option>
+              <option value="uniqueId">萨摩耶 uniqueId</option><option value="mobile">历史手机号</option><option value="userId">Casdoor 用户 ID</option><option value="orderNo">萨摩耶订单号</option>
             </select>
             <Input aria-label="查询值" className="w-full sm:w-80" placeholder="请输入完整查询值" value={value} disabled={loading} onChange={e => setValue(e.target.value)} />
             <Button type="submit" disabled={loading || !value.trim()}>{loading ? "查询中…" : "查询"}</Button>
           </form>
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          {candidates.length > 0 && <div className="space-y-2"><p>该历史手机号关联多个客户，请选择 uniqueId 查看，不会自动合并账号：</p>{candidates.map(candidate => <Button key={candidate.userId} variant="outline" disabled={loading} onClick={() => {setField("uniqueId"); setValue(candidate.uniqueId); void loadHistory("uniqueId", candidate.uniqueId);}}>{candidate.uniqueId}（{candidate.userName}）</Button>)}</div>}
         </CardContent>
       </Card>
       {history && (
@@ -163,9 +173,10 @@ export default function MembershipHistoryPage() {
             <CardHeader><CardTitle>当前会员</CardTitle></CardHeader>
             <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
               <p>用户：<Link to={"/users/beibei/" + encodeURIComponent(history.customer.userName)} className="underline">{history.customer.userName}</Link></p>
-              <p>用户 ID：{history.customer.userId}</p><p>手机号：{history.customer.mobile}</p><p>萨摩耶用户标识：{history.customer.uniqueId}</p>
+              <p>用户 ID：{history.customer.userId}</p><p>历史绑定手机号：{history.customer.mobile || "未保存"}</p><p>萨摩耶用户标识：{history.customer.uniqueId}</p>
               <p>会员开始：{formatDate(history.subscription?.startTime)}</p><p>会员到期：{formatDate(history.subscription?.endTime)}</p>
               <p>订阅存储状态：{history.subscription?.state || "无订阅"}（是否有效还需结合起止时间）</p><p>操作记录数：{history.operations.length}</p>
+              {!history.membershipInitialized && !history.consistencyError && <p className="sm:col-span-2">尚无会员操作档：此账号已建立萨摩耶身份绑定，会员首次维护时才会初始化操作档。</p>}
               {history.consistencyError && <p role="alert" className="text-destructive sm:col-span-2">账实不一致，自动维护已停止：{history.consistencyError}</p>}
             </CardContent>
           </Card>

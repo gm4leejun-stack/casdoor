@@ -524,7 +524,10 @@ func getImpersonateUser(ctx *context.Context, subOwner, subName, username string
 func ApiFilter(ctx *context.Context) {
 	urlPath := getUrlPath(ctx)
 	// This exact merchant callback authenticates its raw envelope in the controller.
-	if urlPath == "/smy/create/rightCard" && ctx.Request.Method == http.MethodPost {
+	if (urlPath == "/smy/create/rightCard" || urlPath == "/smy/unionLogin") && ctx.Request.Method == http.MethodPost {
+		return
+	}
+	if urlPath == "/smy/unionLogin/exchange" && ctx.Request.Method == http.MethodGet {
 		return
 	}
 	if expected := os.Getenv("CASDOOR_MEMBERSHIP_SERVICE_TOKEN"); urlPath == "/api/get-membership-entitlement" && expected != "" && ctx.Input.Header("X-Membership-Service-Token") == expected {
