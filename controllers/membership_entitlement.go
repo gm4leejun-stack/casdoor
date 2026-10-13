@@ -12,6 +12,11 @@ import (
 
 var errMembershipUserNotFound = errors.New("membership user not found")
 
+const (
+	membershipOwner = "beibei"
+	membershipPlan  = "beibei-pro"
+)
+
 type membershipUserLookup func(owner, userID string) (*object.User, error)
 type membershipLookup func(owner, userName, plan string) (*object.MembershipEntitlement, error)
 
@@ -19,20 +24,20 @@ func canonicalIssuer(value string) string {
 	return strings.TrimRight(strings.TrimSpace(value), "/")
 }
 
-func validateMembershipSubject(owner, plan, issuer, userID, configuredIssuer string) bool {
-	return owner != "" && plan != "" && userID != "" && canonicalIssuer(issuer) != "" &&
+func validateMembershipSubject(issuer, userID, configuredIssuer string) bool {
+	return userID != "" && canonicalIssuer(issuer) != "" &&
 		canonicalIssuer(issuer) == canonicalIssuer(configuredIssuer)
 }
 
-func membershipEntitlementForSubject(owner, issuer, userID, plan string, getUser membershipUserLookup, getEntitlement membershipLookup) (*object.MembershipEntitlement, error) {
-	user, err := getUser(owner, userID)
+func membershipEntitlementForSubject(issuer, userID string, getUser membershipUserLookup, getEntitlement membershipLookup) (*object.MembershipEntitlement, error) {
+	user, err := getUser(membershipOwner, userID)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
 		return nil, errMembershipUserNotFound
 	}
-	result, err := getEntitlement(owner, user.Name, plan)
+	result, err := getEntitlement(membershipOwner, user.Name, membershipPlan)
 	if err != nil {
 		return nil, err
 	}
@@ -80,20 +85,19 @@ func (c *ApiController) GetMyMembershipEntitlement() {
 }
 
 func (c *ApiController) GetMembershipEntitlement() {
-	owner, plan := c.Ctx.Input.Query("owner"), c.Ctx.Input.Query("plan")
 	issuer, userID := c.Ctx.Input.Query("issuer"), c.Ctx.Input.Query("userId")
-	if !validateMembershipSubject(owner, plan, issuer, userID, conf.GetConfigString("origin")) {
-		c.ResponseError("owner, plan, issuer, and userId are required and issuer must match this BeiBei AI instance")
+	if !validateMembershipSubject(issuer, userID, conf.GetConfigString("origin")) {
+		c.ResponseError("issuer and userId are required and issuer must match this BeiBei AI instance")
 		return
 	}
-	// Gundam uses a dedicated static token for this internal read-only API.
+	// Trusted consumers use a dedicated static token for this internal read-only API.
 	// ApiFilter validates the same header before allowing the request through.
 	expectedToken := os.Getenv("CASDOOR_MEMBERSHIP_SERVICE_TOKEN")
 	if expectedToken == "" || c.Ctx.Input.Header("X-Membership-Service-Token") != expectedToken {
 		c.ResponseError(c.T("auth:Unauthorized operation"))
 		return
 	}
-	result, err := membershipEntitlementForSubject(owner, issuer, userID, plan, object.GetUserByUserId, membershipEntitlement)
+	result, err := membershipEntitlementForSubject(issuer, userID, object.GetUserByUserId, membershipEntitlement)
 	if err != nil {
 		c.ResponseError("membership entitlement unavailable")
 		return
