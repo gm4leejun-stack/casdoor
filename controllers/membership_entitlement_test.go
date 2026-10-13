@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/casdoor/casdoor/object"
@@ -63,8 +62,8 @@ func TestMembershipEntitlementForSubjectResolvesStableUserID(t *testing.T) {
 	}
 }
 
-func TestMembershipEntitlementForSubjectRejectsUnknownUserID(t *testing.T) {
-	_, err := membershipEntitlementForSubject(
+func TestMembershipEntitlementForSubjectReturnsMissingForUnknownUserID(t *testing.T) {
+	result, err := membershipEntitlementForSubject(
 		"https://id.example.com", "missing",
 		func(string, string) (*object.User, error) { return nil, nil },
 		func(string, string, string) (*object.MembershipEntitlement, error) {
@@ -72,7 +71,20 @@ func TestMembershipEntitlementForSubjectRejectsUnknownUserID(t *testing.T) {
 			return nil, nil
 		},
 	)
-	if !errors.Is(err, errMembershipUserNotFound) {
-		t.Fatalf("error = %v, want errMembershipUserNotFound", err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != object.EntitlementMissing {
+		t.Fatalf("status = %q, want %q", result.Status, object.EntitlementMissing)
+	}
+	if result.Plan != "beibei-pro" {
+		t.Fatalf("plan = %q, want beibei-pro", result.Plan)
+	}
+	wantSubject := (object.MembershipSubject{Issuer: "https://id.example.com", UserID: "missing"})
+	if result.Subject != wantSubject {
+		t.Fatalf("subject = %#v, want %#v", result.Subject, wantSubject)
+	}
+	if result.EvaluatedAt == "" {
+		t.Fatal("evaluatedAt must be set")
 	}
 }

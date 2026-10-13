@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"errors"
 	"os"
 	"strings"
 	"time"
@@ -9,8 +8,6 @@ import (
 	"github.com/casdoor/casdoor/conf"
 	"github.com/casdoor/casdoor/object"
 )
-
-var errMembershipUserNotFound = errors.New("membership user not found")
 
 const (
 	membershipOwner = "beibei"
@@ -35,7 +32,10 @@ func membershipEntitlementForSubject(issuer, userID string, getUser membershipUs
 		return nil, err
 	}
 	if user == nil {
-		return nil, errMembershipUserNotFound
+		result := object.EvaluateMembership(nil, time.Now().UTC())
+		result.Plan = membershipPlan
+		result.Subject = object.MembershipSubject{Issuer: canonicalIssuer(issuer), UserID: userID}
+		return &result, nil
 	}
 	result, err := getEntitlement(membershipOwner, user.Name, membershipPlan)
 	if err != nil {
