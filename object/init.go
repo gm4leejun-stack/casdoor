@@ -39,6 +39,7 @@ func InitDb() {
 	}
 	initBuiltInApplication()
 	initAdminOrganization()
+	initLobeHubApplicationAuth()
 	initAdminUser()
 
 	existed = initBuiltInApiModel()
@@ -187,6 +188,54 @@ func initAdminOrganization() {
 	organization.HasPrivilegeConsent = false
 
 	_, err = AddOrganization(organization)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func initLobeHubApplicationAuth() {
+	application := &Application{Owner: "admin", Name: "lobehub"}
+	existed, err := ormer.Engine.Get(application)
+	if err != nil {
+		panic(err)
+	}
+	if !existed || application.Organization != InitAdminOrganization {
+		return
+	}
+
+	for _, providerItem := range application.Providers {
+		if providerItem == nil {
+			continue
+		}
+		providerItem.CanSignUp = false
+		providerItem.CanSignIn = false
+		if providerItem.Rule == "OneTap" {
+			providerItem.Rule = "None"
+		}
+		providerItem.Provider = nil
+	}
+
+	updates := &Application{
+		EnablePassword:    true,
+		EnableSignUp:      true,
+		DisableSelfSignup: false,
+		EnableCodeSignin:  true,
+		Providers:         application.Providers,
+		SigninMethods: []*SigninMethod{
+			{Name: "Verification code", DisplayName: "Verification code", Rule: "Phone only"},
+			{Name: "Password", DisplayName: "Password", Rule: "All"},
+		},
+		SignupItems: []*SignupItem{
+			{Name: "ID", Visible: false, Required: true, Prompted: false, Rule: "Random"},
+			{Name: "Phone", Visible: true, Required: true, Prompted: false, Rule: "Normal"},
+			{Name: "Agreement", Visible: true, Required: true, Prompted: false, Rule: "None"},
+			{Name: "Signup button", Visible: true, Required: true, Prompted: false, Rule: "None"},
+		},
+	}
+
+	_, err = ormer.Engine.ID(core.PK{application.Owner, application.Name}).
+		Cols("enable_password", "enable_sign_up", "disable_self_signup", "enable_code_signin", "providers", "signin_methods", "signup_items").
+		Update(updates)
 	if err != nil {
 		panic(err)
 	}
