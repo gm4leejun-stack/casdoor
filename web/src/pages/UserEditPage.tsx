@@ -52,6 +52,8 @@ import * as Setting from "@/lib/setting";
 /** the value a Radix tab needs for the account item whose `tab` is the empty string */
 const DEFAULT_TAB = "__default__";
 
+const SELF_ACCOUNT_ITEMS = ["Display name", "Avatar", "Password", "Phone"];
+
 const GENDERS = ["Male", "Female", "Other"];
 /** the three ID card pictures, stored as user properties and uploaded under the same tag */
 const ID_CARD_IMAGES = [
@@ -1122,12 +1124,12 @@ export default function UserEditPage({self}: {self?: boolean} = {}) {
   // rows this frontend adds on top of the antd list; no account item governs them
   const extraRows = (
     <>
-      <FormRow block labelKey="user:Is verified">
+      {!self && <FormRow block labelKey="user:Is verified">
         <Switch checked={!!user.isVerified} onCheckedChange={(v) => updateField("isVerified", v)} />
-      </FormRow>
-      <FormRow block labelKey="user:Deleted time">
+      </FormRow>}
+      {!self && <FormRow block labelKey="user:Deleted time">
         <Input value={Setting.getFormattedDate(user.deletedTime) ?? ""} disabled />
-      </FormRow>
+      </FormRow>}
       <FormRow block labelKey="user:Last signin time">
         <Input value={Setting.getFormattedDate(user.lastSigninTime) ?? ""} disabled />
       </FormRow>
@@ -1183,12 +1185,17 @@ export default function UserEditPage({self}: {self?: boolean} = {}) {
         </Alert>
       ) : null}
       <AccountItemsProvider
-        organization={userOrganization}
+        organization={self ? null : userOrganization}
         isAdmin={isAdmin}
         isSelfOrAdmin={isSelfOrAdmin}
         user={user}
       >
-        {visibleAccountItems.length === 0 ? (
+        {self ? (
+          <div className={formGridClass}>
+            {SELF_ACCOUNT_ITEMS.map((name) => <React.Fragment key={name}>{rows[name]}</React.Fragment>)}
+            {extraRows}
+          </div>
+        ) : visibleAccountItems.length === 0 ? (
           // the organization configures no account items (or has not loaded yet);
           // showing every row beats showing an empty form
           <div className={formGridClass}>
