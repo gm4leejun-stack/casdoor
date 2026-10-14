@@ -1,0 +1,88 @@
+FROM codingcorp-docker.pkg.coding.smycloud.com/smy_common_products_library/library/node:20.20.1 AS FRONT
+WORKDIR /web
+
+# Copy only dependency files first for better caching
+COPY ./web/package.json ./web/yarn.lock ./
+
+# 换成国内淘宝源
+RUN yarn config set registry https://registry.npmmirror.com
+
+RUN yarn install --frozen-lockfile --network-timeout 1000000
+
+# Copy source files and build
+COPY ./web .
+RUN NODE_OPTIONS="--max-old-space-size=4096" yarn run build
+
+FROM codingcorp-docker.pkg.coding.smycloud.com/smy_common_products_library/library/golang:1.25.8 AS BACK
+WORKDIR /go/src/casdoor
+
+# Copy only go.mod and go.sum first for dependency caching
+COPY go.mod go.sum ./
+
+# 换成国内的 GO模块代理
+ENV GOPROXY=https://goproxy.cn,direct
+
+RUN go mod download
+
+# Copy source files
+COPY . .
+
+RUN go test -v -run TestGetVersionInfo ./util/system_test.go ./util/system.go ./util/variable.go
+RUN ./build.sh
+
+FROM alpine:latest AS STANDARD
+LABEL MAINTAINER="https://casdoor.org/"
+ARG USER=casdoor
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN sed -i 's/https/http/' /etc/apk/repositories
+RUN apk add --update sudo
+RUN apk add tzdata
+RUN apk add curl
+RUN apk add ca-certificates && update-ca-certificates
+
+RUN adduser -D $USER -u 1000 \
+    && echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER \
+    && chmod 0440 /etc/sudoers.d/$USER \
+    && mkdir logs \
+    && chown -R $USER:$USER logs
+
+USER 1000
+WORKDIR /
+COPY --from=BACK --chown=$USER:$USER /go/src/casdoor/server_linux_amd64 ./server
+COPY --from=BACK --chown=$USER:$USER /go/src/casdoor/swagger ./swagger
+COPY --from=BACK --chown=$USER:$USER /go/src/casdoor/conf/app.conf ./conf/app.conf
+COPY --from=FRONT --chown=$USER:$USER /web/build ./web/build
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -fsS "http://127.0.0.1:${httpport:-8000}/api/health" > /dev/null || exit 1
+
+ENTRYPOINT ["/server"]
+
+
+FROM codingcorp-docker.pkg.coding.smycloud.com/smy_common_products_library/library/debian:13.7 AS ALLINONE
+LABEL MAINTAINER="https://casdoor.org/"
+ARG TARGETOS
+ARG TARGETARCH
+
+
+# 替换 apt 源为阿里云
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
+    [ -f /etc/apt/sources.list.d/debian.sources ] && sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources || true
+
+RUN apt update
+RUN apt install -y ca-certificates lsof curl && update-ca-certificates
+
+WORKDIR /
+COPY --from=BACK /go/src/casdoor/server_linux_amd64 ./server
+COPY --from=BACK /go/src/casdoor/swagger ./swagger
+COPY --from=BACK /go/src/casdoor/docker-entrypoint.sh /docker-entrypoint.sh
+COPY --from=BACK /go/src/casdoor/conf/app.conf ./conf/app.conf
+COPY --from=FRONT /web/build ./web/build
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -fsS "http://127.0.0.1:${httpport:-8000}/api/health" > /dev/null || exit 1
+
+ENTRYPOINT ["/bin/bash"]
+CMD ["/docker-entrypoint.sh"]
