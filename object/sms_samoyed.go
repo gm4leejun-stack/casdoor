@@ -123,10 +123,17 @@ func (client *samoyedSmsClient) SendMessage(param map[string]string, targetPhone
 		return fmt.Errorf("Samoyed SMS: upstream returned HTTP %d", response.StatusCode)
 	}
 
-	var result struct {
-		Code json.RawMessage `json:"code"`
+	responseBody, err := io.ReadAll(io.LimitReader(response.Body, 64*1024))
+	if err != nil {
+		return fmt.Errorf("Samoyed SMS: failed to read upstream response")
 	}
-	if err = json.NewDecoder(response.Body).Decode(&result); err != nil {
+
+	var result struct {
+		Code    json.RawMessage `json:"code"`
+		Msg     string          `json:"msg"`
+		Message string          `json:"message"`
+	}
+	if err = json.Unmarshal(responseBody, &result); err != nil {
 		return fmt.Errorf("Samoyed SMS: invalid upstream response")
 	}
 
@@ -139,6 +146,32 @@ func (client *samoyedSmsClient) SendMessage(param map[string]string, targetPhone
 		code = number.String()
 	}
 	if code != strconv.Itoa(http.StatusOK) {
+		detail := strings.TrimSpace(result.Message)
+		if detail == "" {
+			detail = strings.TrimSpace(result.Msg)
+		}
+		if detail == "" {
+			detail = strings.TrimSpace(string(responseBody))
+		}
+		for _, sensitive := range []string{
+			targetPhoneNumber[0],
+			strings.TrimPrefix(targetPhoneNumber[0], "+86"),
+			mobile,
+			param["code"],
+			string(client.mobileAesKey),
+		} {
+			if sensitive != "" {
+				detail = strings.ReplaceAll(detail, sensitive, "***")
+			}
+		}
+		detail = strings.Join(strings.Fields(detail), " ")
+		detailRunes := []rune(detail)
+		if len(detailRunes) > 200 {
+			detail = string(detailRunes[:200]) + "..."
+		}
+		if detail != "" {
+			return fmt.Errorf("Samoyed SMS: upstream returned code %s: %s", code, detail)
+		}
 		return fmt.Errorf("Samoyed SMS: upstream returned code %s", code)
 	}
 
