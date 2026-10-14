@@ -31,3 +31,18 @@ Go 测试文件使用 `_test.go`，测试函数使用 `Test<行为>` 命名。�
 ## Agent 约束
 
 开始前阅读相关目录和 `CLAUDE.md`。保留用户已有改动，不执行破坏性 Git 操作；完成时报告实际运行过的验证命令。
+
+## 远程仓库与同步规范
+
+本仓库配置两个远程：
+
+| Remote | 地址 | 用途 |
+| --- | --- | --- |
+| `origin` | `https://github.com/gm4leejun-stack/casdoor.git` | GitHub：日常开发、测试的代码管理平台 |
+| `smy` | `ssh://git@e.coding.smycloud.com:22/codingcorp/ai_repo/casdoor.git` | 内网 CODING：生产发布时同步代码的平台 |
+
+工作规范：
+
+- 平时开发和代码同步默认只使用 GitHub（`origin`），部署在本地做测试环境。
+- 只有用户明确要求推送到 CODING 平台时，才把最新 `master` 分支同步推送到 `smy` 远端：`git push smy master`。
+- 不得主动向 `smy` 远端推送；也不要在未确认前向 `origin` 推送破坏性操作（force push、删除分支等）。
