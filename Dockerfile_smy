@@ -48,7 +48,7 @@ WORKDIR /
 COPY --from=BACK /go/src/casdoor/server_linux_amd64 ./server
 COPY --from=BACK /go/src/casdoor/swagger ./swagger
 COPY --from=BACK /go/src/casdoor/docker-entrypoint.sh /docker-entrypoint.sh
-COPY --from=BACK /go/src/casdoor/conf/app.conf ./conf/app.conf
+COPY ./conf/app-test.conf ./conf/app.conf
 COPY --from=FRONT /web/build ./web/build
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=3 \
