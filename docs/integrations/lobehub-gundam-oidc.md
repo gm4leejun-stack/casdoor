@@ -4,6 +4,11 @@
 
 版本：v2
 
+> 后续认证页面、手机号注册和登录方式要求由
+> `docs/superpowers/specs/2026-10-13-lobehub-casdoor-phone-signup-design.md` 更新。
+> 本文关于“登录方式保持原样”的描述不再作为该部分的最终要求；身份共享、独立
+> Application 和稳定 `sub` 的边界继续有效。
+
 本文只定义 Casdoor 项目的配置边界。LobeHub 的本地用户映射、伪邮箱和显示规则位于
 LobeHub 项目的 `docs/development/auth/casdoor-shared-identity.md`。
 
