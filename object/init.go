@@ -37,8 +37,8 @@ func InitDb() {
 		initBuiltInCert()
 		initBuiltInLdap()
 	}
-	initBuiltInApplication()
 	initAdminOrganization()
+	initBuiltInApplication()
 	initLobeHubApplicationAuth()
 	initAdminUser()
 
@@ -375,6 +375,10 @@ func initBuiltInApplication() {
 			updates.Logo = "/beibei-logo.svg"
 			columns = append(columns, "logo")
 		}
+		if application.Organization != InitAdminOrganization {
+			updates.Organization = InitAdminOrganization
+			columns = append(columns, "organization")
+		}
 		if len(columns) != 0 {
 			_, err = ormer.Engine.ID(core.PK{application.Owner, application.Name}).
 				Cols(columns...).
@@ -396,7 +400,7 @@ func initBuiltInApplication() {
 		Scopes:         []*ScopeItem{},
 		Logo:           "/beibei-logo.svg",
 		HomepageUrl:    "https://casdoor.org",
-		Organization:   "built-in",
+		Organization:   InitAdminOrganization,
 		Cert:           "cert-built-in",
 		EnablePassword: true,
 		EnableSignUp:   true,
