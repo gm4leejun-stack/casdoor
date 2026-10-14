@@ -30,36 +30,6 @@ COPY . .
 RUN go test -v -run TestGetVersionInfo ./util/system_test.go ./util/system.go ./util/variable.go
 RUN ./build.sh
 
-FROM alpine:latest AS STANDARD
-LABEL MAINTAINER="https://casdoor.org/"
-ARG USER=casdoor
-ARG TARGETOS
-ARG TARGETARCH
-
-RUN sed -i 's/https/http/' /etc/apk/repositories
-RUN apk add --update sudo
-RUN apk add tzdata
-RUN apk add curl
-RUN apk add ca-certificates && update-ca-certificates
-
-RUN adduser -D $USER -u 1000 \
-    && echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER \
-    && chmod 0440 /etc/sudoers.d/$USER \
-    && mkdir logs \
-    && chown -R $USER:$USER logs
-
-USER 1000
-WORKDIR /
-COPY --from=BACK --chown=$USER:$USER /go/src/casdoor/server_linux_amd64 ./server
-COPY --from=BACK --chown=$USER:$USER /go/src/casdoor/swagger ./swagger
-COPY --from=BACK --chown=$USER:$USER /go/src/casdoor/conf/app.conf ./conf/app.conf
-COPY --from=FRONT --chown=$USER:$USER /web/build ./web/build
-
-HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=3 \
-    CMD curl -fsS "http://127.0.0.1:${httpport:-8000}/api/health" > /dev/null || exit 1
-
-ENTRYPOINT ["/server"]
-
 
 FROM codingcorp-docker.pkg.coding.smycloud.com/smy_common_products_library/library/debian:13.7 AS ALLINONE
 LABEL MAINTAINER="https://casdoor.org/"
@@ -68,8 +38,8 @@ ARG TARGETARCH
 
 
 # 替换 apt 源为阿里云
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
-    [ -f /etc/apt/sources.list.d/debian.sources ] && sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources || true
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources && \
+    apt-get update
 
 RUN apt update
 RUN apt install -y ca-certificates lsof curl && update-ca-certificates
