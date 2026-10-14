@@ -1,5 +1,7 @@
 # 萨摩耶联登接口
 
+给消费方的调用配置、请求示例及签名说明统一见 [消费方联调说明](smy-consumer-integration.md)。本文保留服务端实现、部署和排查信息，不作为消费方的配置待办。
+
 ## 范围与身份
 
 `POST /smy/unionLogin` 由萨摩耶服务端调用，返回 `h5Url`，由萨摩耶前端自动跳转，无需用户再点击。联登只认证身份，不查询订单、套餐、会员有效期或退款，不修改会员。文档残留订单校验不适用。
@@ -65,11 +67,11 @@ Content-Type: `application/json`，最大 64KiB。公共 envelope 同会员接�
 
 | 配置 | 要求 |
 | --- | --- |
-| SMY_UNION_LOGIN_BASE_URL | Casdoor 公网 origin，如 https://casdoor.example.com，无路径、查询参数 |
+| SMY_UNION_LOGIN_BASE_URL | Casdoor 可访问 origin；内网联调为 http://192.168.12.18:18000，生产如 https://casdoor.example.com，无路径、查询参数 |
 | SMY_UNION_LOGIN_LOBEHUB_URL | 固定 LobeHub 入口，如 https://lobe.example.com/signin/smy，无查询参数 |
 | SMY_UNION_LOGIN_APPLICATION | 现有 LobeHub 应用 owner/name，如 admin/lobehub；组织为 beibei |
 
-URL 要求 HTTPS，仅 loopback 开发允许 HTTP。应用需启用登录及 EnableAutoSignin，配置精确回调 `https://lobe.example.com/api/auth/oauth2/callback/casdoor`，openid/email/profile 不应要求授权确认，不能配置需交互的提示页；LobeHub AUTH_CASDOOR_ID 对应同一应用。不接受请求方指定跳转，不自动放宽应用安全配置。联登仅支持普通非管理员账号；已启用 MFA、要求配置 MFA、要求更新密码等的账号拒绝自动联登，不绕过安全限制。
+URL 要求 HTTPS，loopback 允许 HTTP；`runmode=dev` 时额外允许私有内网 IP 的 HTTP，生产模式不允许该内网 HTTP 例外。应用需启用登录及 EnableAutoSignin，配置精确回调 `https://lobe.example.com/api/auth/oauth2/callback/casdoor`，openid/email/profile 不应要求授权确认，不能配置需交互的提示页；LobeHub AUTH_CASDOOR_ID 对应同一应用。不接受请求方指定跳转，不自动放宽应用安全配置。联登仅支持普通非管理员账号；已启用 MFA、要求配置 MFA、要求更新密码等的账号拒绝自动联登，不绕过安全限制。
 
 ### 切换现有 LobeHub 应用：不迁移账号
 
@@ -79,7 +81,7 @@ URL 要求 HTTPS，仅 loopback 开发允许 HTTP。应用需启用登录及 Ena
 
 组织和 Application 配置保存在数据库，环境变量属于部署配置；Git 提交／推送不会复制这些运行状态。换环境或重建容器时须重新配置，先备份数据库，不把数据库备份、client secret 或萨摩耶密钥提交到仓库。
 
-本机部署已完成组织切换、自动登录、回调及三个 SMY_UNION_LOGIN 配置项，Casdoor 重启后健康检查通过，LobeHub 联登入口正常。正式商户号、公钥和私钥仍缺失，因此完整签名联登尚未验证，接口保持拒绝处理。localhost 地址仅用于本机，外部对接须配置可访问的 HTTPS 地址。此次未创建套餐或订阅。
+当前内网联调使用 Casdoor `http://192.168.12.18:18000`、LobeHub `http://192.168.12.18:24491`；联登目标为 `/signin/smy`，精确回调为 `http://192.168.12.18:24491/api/auth/oauth2/callback/casdoor`。Casdoor origin／originFrontend、SMY_UNION_LOGIN_BASE_URL、SMY_UNION_LOGIN_LOBEHUB_URL，以及 LobeHub APP_URL／AUTH_CASDOOR_ISSUER 必须同步使用上述地址，不能残留 localhost 浏览器跳转。服务端和浏览器都须能访问该内网 IP。组织为 beibei，固定套餐 beibei/beibei-pro 已创建并启用，商户号为 BSAI，约定密钥仅保存在部署配置。生产 HTTPS 地址及回调配置由我方负责，切换部署后须重新验证联登链路。
 
 启动会显式移除客户表单列 mobile 唯一索引，保留全部数据及其他唯一约束，再 Sync2 创建凭证表 `smy_union_login_ticket`。上线前备份数据库，先部署 LobeHub 入口，再部署 Casdoor 及配置，最后开放接口。未部署代码不会生效。多个无手机号绑定产生后不能直接恢复旧手机号索引／旧身份代码；回退优先关闭新入口，保留全部账号及会员数据。
 

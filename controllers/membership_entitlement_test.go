@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/beego/beego/v2/server/web"
 	"github.com/casdoor/casdoor/object"
 )
 
@@ -34,6 +35,9 @@ func TestSmyUnionLoginAccountSafety(t *testing.T) {
 }
 
 func TestSmyUnionLoginProtocol(t *testing.T) {
+	previousRunMode := web.BConfig.RunMode
+	t.Cleanup(func() { web.BConfig.RunMode = previousRunMode })
+	web.BConfig.RunMode = "dev"
 	private, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
@@ -106,15 +110,19 @@ func TestSmyUnionLoginProtocol(t *testing.T) {
 			t.Fatalf("invalid business accepted: %s", business)
 		}
 	}
-	for _, value := range []string{"https://example.com", "http://localhost:8000", "http://127.0.0.1:8000"} {
+	for _, value := range []string{"https://example.com", "http://localhost:8000", "http://127.0.0.1:8000", "http://192.168.12.18:18000", "http://10.0.0.1:8000", "http://172.16.0.1:8000"} {
 		if _, err := smyUnionURL(value); err != nil {
 			t.Fatal(value, err)
 		}
 	}
-	for _, value := range []string{"", "//example.com", "http://example.com", "https://user:pass@example.com", "https://example.com?next=x", "https://example.com?", "https://example.com#x"} {
+	for _, value := range []string{"", "//example.com", "http://example.com", "http://8.8.8.8", "http://172.32.0.1", "https://user:pass@example.com", "https://example.com?next=x", "https://example.com?", "https://example.com#x"} {
 		if _, err := smyUnionURL(value); err == nil {
 			t.Fatal("unsafe URL accepted", value)
 		}
+	}
+	web.BConfig.RunMode = "prod"
+	if _, err := smyUnionURL("http://192.168.12.18:18000"); err == nil {
+		t.Fatal("private HTTP accepted in production")
 	}
 }
 

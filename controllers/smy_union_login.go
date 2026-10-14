@@ -9,12 +9,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/beego/beego/v2/server/web"
 	"github.com/casdoor/casdoor/form"
 	"github.com/casdoor/casdoor/object"
 	"github.com/casdoor/casdoor/util"
@@ -37,8 +39,11 @@ func smyUnionURL(value string) (*url.URL, error) {
 	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
 		return nil, fmt.Errorf("invalid union login URL")
 	}
-	if u.Scheme != "https" && !(u.Scheme == "http" && (u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1" || u.Hostname() == "::1")) {
-		return nil, fmt.Errorf("union login requires HTTPS except loopback development")
+	host := u.Hostname()
+	ip := net.ParseIP(host)
+	localHTTP := host == "localhost" || (ip != nil && (ip.IsLoopback() || (web.BConfig.RunMode == "dev" && ip.IsPrivate())))
+	if u.Scheme != "https" && !(u.Scheme == "http" && localHTTP) {
+		return nil, fmt.Errorf("union login requires HTTPS except loopback or private IP development")
 	}
 	return u, nil
 }
@@ -46,7 +51,7 @@ func smyUnionURL(value string) (*url.URL, error) {
 func loadSmyUnionLoginConfig() (*smyUnionLoginConfig, error) {
 	base, err := smyUnionURL(os.Getenv("SMY_UNION_LOGIN_BASE_URL"))
 	if err != nil || (base.Path != "" && base.Path != "/") {
-		return nil, fmt.Errorf("SMY_UNION_LOGIN_BASE_URL must be the public Casdoor origin")
+		return nil, fmt.Errorf("SMY_UNION_LOGIN_BASE_URL must be the externally reachable Casdoor origin")
 	}
 	lobe, err := smyUnionURL(os.Getenv("SMY_UNION_LOGIN_LOBEHUB_URL"))
 	if err != nil || lobe.Path != "/signin/smy" {
