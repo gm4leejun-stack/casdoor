@@ -106,3 +106,18 @@ TokenFields 和密钥。这属于 Casdoor 原生的 Application 级配置，不�
 - 不复制 Casdoor 用户数据，不部署第二套 Casdoor。
 - 不建设身份桥接服务、用户同步、消息队列或统一会员中心。
 - 不把 LobeHub 或 Gundam-Agent 的业务数据写入 Casdoor 用户对象。
+
+## 9. 生产短信配置
+
+生产环境沿用开发联调已验证的配置，不新增服务：
+
+1. `admin/lobehub` Application 的组织设置为 `beibei`。
+2. 在 `beibei/samoyed-sms` Provider 中配置固定短信 URL、Business Code、
+   Message Enum Code 和 AES Key。业务编码与密钥只在生产后台或秘密管理中保存，
+   不写入 Git。
+3. 将 `beibei/samoyed-sms` 加入 `admin/lobehub` 的 Providers，国家/地区设置为
+   `CN`，规则设置为 `all`。
+4. 保存后无需重启 Casdoor；在 LobeHub 注册页发送一次验证码完成验证。
+
+需要回滚时，从 `admin/lobehub` 的 Providers 中移除该绑定即可，不必删除短信
+Provider。
