@@ -27,6 +27,7 @@ tmpFiles/
 *.tmp
 logs/
 files/
+/conf/runtime-test.env
 lastupdate.tmp
 commentsRouter*.go
 
