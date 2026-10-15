@@ -48,6 +48,7 @@ bash build.sh 也可以打包，但它会同时构建 Linux amd64 和 arm64 两�
 
 | 配置项 | 文件 | 填写方式 |
 | --- | --- | --- |
+| driverName | conf/runtime-test.env | 固定为 mysql；Docker 入口脚本会在该环境变量缺失时使用 sqlite |
 | dataSourceName | conf/runtime-test.env | casdoor_test:密码@tcp(数据库地址:3306)/，末尾保留 / |
 | dbName | conf/app-test.conf | 独立测试库，默认 casdoor_test，不要指向生产库 |
 | origin | conf/app-test.conf | 浏览器实际访问的完整 origin，例如 https://casdoor-test.example.com 或 http://192.0.2.10:18000 |
@@ -58,6 +59,7 @@ bash build.sh 也可以打包，但它会同时构建 Linux amd64 和 arm64 两�
 模板中的域名和 REPLACE_* 都是占位值，必须替换。容器里的 localhost 指容器自身，不是数据库机器或宿主机。
 MySQL DSN 不要重复加库名，也不要追加 ?charset 等查询参数：当前代码直接拼接 dataSourceName + dbName。
 环境变量名区分大小写，应写 dataSourceName，而非 DATA_SOURCE_NAME。
+使用 Dockerfile_smy 构建的镜像已通过 CASDOOR_DB_FROM_CONFIG=true 让入口脚本信任打包的 conf/app.conf（MySQL）；注入 driverName/dataSourceName 环境变量仍可覆盖。仅在使用共享 docker-entrypoint.sh 且未设置该变量的其他构建中，缺省才会回落到 SQLite。
 Docker --env-file 不解析外层引号，值不要加引号；这个 env 文件不要直接 source 到 Shell。
 
 ### 数据库与 Redis

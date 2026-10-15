@@ -51,6 +51,10 @@ COPY --from=BACK /go/src/casdoor/docker-entrypoint.sh /docker-entrypoint.sh
 COPY ./conf/app-test.conf ./conf/app.conf
 COPY --from=FRONT /web/build ./web/build
 
+# This image bakes conf/app-test.conf as /conf/app.conf; let the entrypoint
+# use its database settings (MySQL) instead of falling back to SQLite.
+ENV CASDOOR_DB_FROM_CONFIG=true
+
 HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -fsS "http://127.0.0.1:${httpport:-8000}/api/health" > /dev/null || exit 1
 

@@ -421,9 +421,9 @@ export default function LoginPage({type = "login", application: applicationProp,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, preview]);
 
-  // A new installation without initAdminPassword: built-in/admin gets its first password on the welcome page.
+  // A new installation without initAdminPassword: beibei/admin gets its first password on the welcome page.
   React.useEffect(() => {
-    if (preview || type !== "login" || (owner && owner !== "built-in")) {
+    if (preview || type !== "login" || (owner && owner !== "beibei")) {
       return;
     }
     AuthBackend.getInitAdminStatus()
