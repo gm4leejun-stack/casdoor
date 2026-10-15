@@ -73,6 +73,9 @@ export default function UserEditPage({self}: {self?: boolean} = {}) {
   const params = useParams();
   const navigate = useNavigate();
   const {account, accessToken, reload: reloadAccount} = useAccount();
+  // in the customized deployment the self-service profile shows only the
+  // required fields; baseMode restores the full upstream account form
+  const selfMode = !!self && !account?.baseMode;
   const returnUrl = new URLSearchParams(useLocation().search).get("returnUrl") ?? "";
   // "/account" edits the signed-in user, every other route takes the name from the URL
   const organizationName = self ? account?.owner ?? "" : params.organizationName ?? "";
@@ -1124,10 +1127,10 @@ export default function UserEditPage({self}: {self?: boolean} = {}) {
   // rows this frontend adds on top of the antd list; no account item governs them
   const extraRows = (
     <>
-      {!self && <FormRow block labelKey="user:Is verified">
+      {!selfMode && <FormRow block labelKey="user:Is verified">
         <Switch checked={!!user.isVerified} onCheckedChange={(v) => updateField("isVerified", v)} />
       </FormRow>}
-      {!self && <FormRow block labelKey="user:Deleted time">
+      {!selfMode && <FormRow block labelKey="user:Deleted time">
         <Input value={Setting.getFormattedDate(user.deletedTime) ?? ""} disabled />
       </FormRow>}
       <FormRow block labelKey="user:Last signin time">
@@ -1185,12 +1188,12 @@ export default function UserEditPage({self}: {self?: boolean} = {}) {
         </Alert>
       ) : null}
       <AccountItemsProvider
-        organization={self ? null : userOrganization}
+        organization={selfMode ? null : userOrganization}
         isAdmin={isAdmin}
         isSelfOrAdmin={isSelfOrAdmin}
         user={user}
       >
-        {self ? (
+        {selfMode ? (
           <div className={formGridClass}>
             {SELF_ACCOUNT_ITEMS.map((name) => <React.Fragment key={name}>{rows[name]}</React.Fragment>)}
             {extraRows}

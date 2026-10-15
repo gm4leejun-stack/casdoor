@@ -22,6 +22,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/casdoor/casdoor/conf"
 	"github.com/casdoor/casdoor/i18n"
 	"github.com/casdoor/casdoor/util"
 )
@@ -237,6 +238,7 @@ func GetMaskedApplication(application *Application, userId string) *Application 
 	if application == nil {
 		return nil
 	}
+	application.BaseMode = conf.IsBaseMode()
 
 	if application.TokenFields == nil {
 		application.TokenFields = []string{}

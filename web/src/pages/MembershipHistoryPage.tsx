@@ -112,7 +112,7 @@ export default function MembershipHistoryPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
-  const authorized = Setting.isAdminUser(account) || (account?.owner === "beibei" && account?.isAdmin === true);
+  const authorized = !account?.baseMode && (Setting.isAdminUser(account) || account?.isAdmin === true);
 
   async function search(event: FormEvent) {
     event.preventDefault();

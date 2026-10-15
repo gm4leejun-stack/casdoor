@@ -42,9 +42,18 @@ import (
 const (
 	UserPropertiesWechatUnionId = "wechatUnionId"
 	UserPropertiesWechatOpenId  = "wechatOpenId"
-	InitAdminOrganization       = "beibei"
 	InitAdminName               = "admin"
 )
+
+// InitAdminOrganizationName is the organization of the initial admin user. In the
+// default customized deployment it is "beibei"; with baseMode enabled it falls
+// back to the upstream "built-in" organization.
+func InitAdminOrganizationName() string {
+	if conf.IsBaseMode() {
+		return "built-in"
+	}
+	return "beibei"
+}
 
 const UserEnforcerId = "built-in/user-enforcer-built-in"
 
@@ -238,6 +247,10 @@ type User struct {
 	Properties map[string]string `json:"properties"`
 
 	ThirdPartyLinks []*ThirdPartyLink `xorm:"-" json:"thirdPartyLinks,omitempty"`
+
+	// BaseMode mirrors conf.IsBaseMode() so the web frontend can switch between
+	// the customized and upstream experiences without a separate request.
+	BaseMode bool `xorm:"-" json:"baseMode"`
 
 	Roles       []*Role       `json:"roles"`
 	Permissions []*Permission `json:"permissions"`
@@ -1650,11 +1663,14 @@ func (user *User) IsGlobalAdmin() bool {
 		return false
 	}
 
+	if conf.IsBaseMode() {
+		return user.Owner == "built-in"
+	}
 	return IsInitAdmin(user.Owner, user.Name) || (user.Owner == "built-in" && IsAppUser(user.Name))
 }
 
 func IsInitAdmin(owner string, name string) bool {
-	return owner == InitAdminOrganization && name == InitAdminName
+	return owner == InitAdminOrganizationName() && name == InitAdminName
 }
 
 func (user *User) HasFaceIdImage() bool {

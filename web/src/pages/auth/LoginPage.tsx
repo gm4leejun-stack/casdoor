@@ -43,7 +43,9 @@ type LoginType = "login" | "code" | "cas" | "saml" | "device";
 type LoginMethod = "password" | "verificationCode" | "verificationCodeEmail" | "verificationCodePhone" | "ldap" | "webAuthn" | "wechat" | "faceId" | "magicLink" | "device";
 
 function isLobeHubApplication(application: any) {
-  return application?.name === "lobehub" && application?.organization === "beibei";
+  // the BeiBei customizations are the deployment default; baseMode falls back
+  // to the upstream login experience for every application
+  return !!application && !application.baseMode;
 }
 
 function getDefaultLoginMethod(application: any): LoginMethod {

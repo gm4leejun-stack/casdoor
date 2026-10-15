@@ -143,12 +143,14 @@ type Application struct {
 	GrantTypes                   []string        `xorm:"varchar(1000)" json:"grantTypes"`
 	OrganizationObj              *Organization   `xorm:"-" json:"organizationObj"`
 	CertPublicKey                string          `xorm:"-" json:"certPublicKey"`
-	Tags                         []string        `xorm:"mediumtext" json:"tags"`
-	SamlAttributes               []*SamlItem     `xorm:"varchar(1000)" json:"samlAttributes"`
-	SamlHashAlgorithm            string          `xorm:"varchar(20)" json:"samlHashAlgorithm"`
-	SamlC14nPrefix               string          `xorm:"varchar(100)" json:"samlC14nPrefix"`
-	IsShared                     bool            `json:"isShared"`
-	IpRestriction                string          `json:"ipRestriction"`
+	// BaseMode mirrors conf.IsBaseMode() for the login/signup pages.
+	BaseMode          bool        `xorm:"-" json:"baseMode"`
+	Tags              []string    `xorm:"mediumtext" json:"tags"`
+	SamlAttributes    []*SamlItem `xorm:"varchar(1000)" json:"samlAttributes"`
+	SamlHashAlgorithm string      `xorm:"varchar(20)" json:"samlHashAlgorithm"`
+	SamlC14nPrefix    string      `xorm:"varchar(100)" json:"samlC14nPrefix"`
+	IsShared          bool        `json:"isShared"`
+	IpRestriction     string      `json:"ipRestriction"`
 
 	ClientId                string                 `xorm:"varchar(100)" json:"clientId"`
 	ClientSecret            string                 `xorm:"varchar(100)" json:"clientSecret"`

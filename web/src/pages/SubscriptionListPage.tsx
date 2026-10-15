@@ -93,7 +93,7 @@ export default function SubscriptionListPage() {
   return (
     <CrudListPage
       title={i18next.t("general:Subscriptions")}
-      toolbar={Setting.isAdminUser(account) || (account?.owner === "beibei" && account?.isAdmin === true) ? (
+      toolbar={!account?.baseMode && (Setting.isAdminUser(account) || account?.isAdmin === true) ? (
         <Button variant="outline" asChild><Link to="/membership-history">客户会员操作档</Link></Button>
       ) : undefined}
       columns={columns}

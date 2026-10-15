@@ -22,6 +22,7 @@ import (
 
 	"github.com/beego/beego/v2/core/utils/pagination"
 	"github.com/casdoor/casdoor/captcha"
+	"github.com/casdoor/casdoor/conf"
 	"github.com/casdoor/casdoor/form"
 	"github.com/casdoor/casdoor/object"
 	"github.com/casdoor/casdoor/util"
@@ -444,7 +445,7 @@ func (c *ApiController) SendVerificationCode() {
 			sendResp = object.SendVerificationCodeToEmail(organization, user, provider, clientIp, vform.Dest, vform.Method, c.Ctx.Request.Host, application.Name, application, c.GetAcceptLanguage())
 		}
 	case object.VerifyTypePhone:
-		isLobeHubApplication := application.Name == "lobehub" && application.Organization == "beibei"
+		isLobeHubApplication := !conf.IsBaseMode()
 		if isLobeHubApplication && (vform.Method == SignupVerification || vform.Method == LoginVerification) && vform.CountryCode != "CN" {
 			c.ResponseError(c.T("verification:Wrong parameter") + ": countryCode.")
 			return

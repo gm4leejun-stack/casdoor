@@ -6,6 +6,13 @@ immutable commit and promote them by digest.
 
 Required runtime configuration:
 
+- `baseMode` (app.conf, default `false`): the BeiBei customizations are the
+  deployment default and apply to every organization and application. Set
+  `baseMode = true` to opt an instance back to the upstream behavior: the
+  `built-in` admin org, upstream signup/verification flows, editable
+  subscriptions, no `/smy/*` or redemption endpoints, and no custom nav or
+  profile trimming. Secrets below are still required whenever the customized
+  endpoints should answer requests.
 - `CASDOOR_MEMBERSHIP_CODE_PEPPER`: secret with at least 16 characters. Store
   it in the deployment secret manager. Losing it makes unused codes unusable.
 - `CASDOOR_MEMBERSHIP_SERVICE_TOKEN`: shared secret used only by Gundam's

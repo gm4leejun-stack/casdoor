@@ -164,7 +164,7 @@ func initBuiltInOrganization() bool {
 }
 
 func initAdminOrganization() {
-	organization, err := getOrganization("admin", InitAdminOrganization)
+	organization, err := getOrganization("admin", InitAdminOrganizationName())
 	if err != nil {
 		panic(err)
 	}
@@ -181,9 +181,11 @@ func initAdminOrganization() {
 		*organization = *builtInOrganization
 	}
 	organization.Owner = "admin"
-	organization.Name = InitAdminOrganization
+	organization.Name = InitAdminOrganizationName()
 	organization.CreatedTime = util.GetCurrentTime()
-	organization.DisplayName = "BeiBei AI"
+	if !conf.IsBaseMode() {
+		organization.DisplayName = "BeiBei AI"
+	}
 	organization.DefaultApplication = ""
 	organization.HasPrivilegeConsent = false
 
@@ -194,12 +196,15 @@ func initAdminOrganization() {
 }
 
 func initLobeHubApplicationAuth() {
+	if conf.IsBaseMode() {
+		return
+	}
 	application := &Application{Owner: "admin", Name: "lobehub"}
 	existed, err := ormer.Engine.Get(application)
 	if err != nil {
 		panic(err)
 	}
-	if !existed || application.Organization != InitAdminOrganization {
+	if !existed || application.Organization != InitAdminOrganizationName() {
 		return
 	}
 
@@ -242,7 +247,7 @@ func initLobeHubApplicationAuth() {
 }
 
 func initAdminUser() {
-	user, err := getUser(InitAdminOrganization, InitAdminName)
+	user, err := getUser(InitAdminOrganizationName(), InitAdminName)
 	if err != nil {
 		panic(err)
 	}
@@ -251,7 +256,7 @@ func initAdminUser() {
 	}
 
 	user = &User{
-		Owner:             InitAdminOrganization,
+		Owner:             InitAdminOrganizationName(),
 		Name:              InitAdminName,
 		CreatedTime:       util.GetCurrentTime(),
 		Id:                util.GenerateId(),
@@ -272,7 +277,7 @@ func initAdminUser() {
 		IsDeleted:         false,
 		SignupApplication: "app-built-in",
 		RegisterType:      "Add User",
-		RegisterSource:    fmt.Sprintf("%s/%s", InitAdminOrganization, InitAdminName),
+		RegisterSource:    fmt.Sprintf("%s/%s", InitAdminOrganizationName(), InitAdminName),
 		CreatedIp:         "127.0.0.1",
 		Properties:        make(map[string]string),
 	}
@@ -282,7 +287,7 @@ func initAdminUser() {
 	}
 
 	if user.Password == "" {
-		fmt.Printf("The password of %s/%s is not set, open BeiBei AI in the browser to set it, or set initAdminPassword before the first start\n", InitAdminOrganization, InitAdminName)
+		fmt.Printf("The password of %s/%s is not set, open BeiBei AI in the browser to set it, or set initAdminPassword before the first start\n", InitAdminOrganizationName(), InitAdminName)
 	}
 }
 
@@ -298,7 +303,7 @@ func getInitAdminPassword() string {
 
 // IsInitAdminPending tells whether beibei/admin has never had a password and is waiting for one on the welcome page
 func IsInitAdminPending() (bool, error) {
-	user, err := getUser(InitAdminOrganization, InitAdminName)
+	user, err := getUser(InitAdminOrganizationName(), InitAdminName)
 	if err != nil {
 		return false, err
 	}
@@ -317,7 +322,7 @@ func SetInitAdminPassword(password string, lang string) (bool, error) {
 		return false, nil
 	}
 
-	user, err := getUser(InitAdminOrganization, InitAdminName)
+	user, err := getUser(InitAdminOrganizationName(), InitAdminName)
 	if err != nil {
 		return false, err
 	}

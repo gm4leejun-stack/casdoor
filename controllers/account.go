@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/beego/beego/v2/core/logs"
+	"github.com/casdoor/casdoor/conf"
 	"github.com/casdoor/casdoor/form"
 	"github.com/casdoor/casdoor/object"
 	"github.com/casdoor/casdoor/util"
@@ -126,9 +127,10 @@ func (c *ApiController) Signup() {
 
 	// a value posted for a hidden signup item did not come from the signup page
 	application.ClearHiddenSignupFields(&authForm)
-	isLobeHubApplication := application.Name == "lobehub" &&
-		application.Organization == "beibei" &&
-		authForm.Organization == "beibei"
+	// the customized signup rules are the deployment default; baseMode falls
+	// back to the upstream behavior for every application
+	isLobeHubApplication := !conf.IsBaseMode() &&
+		authForm.Organization == application.Organization
 	isLobeHubPhoneSignup := isLobeHubApplication &&
 		application.IsSignupFieldVisible("Phone") &&
 		application.GetSignupFieldRule("Phone") != "No verification"

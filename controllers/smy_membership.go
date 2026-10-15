@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/casdoor/casdoor/conf"
 	"github.com/casdoor/casdoor/object"
 )
 
@@ -72,6 +73,10 @@ func smyDecodeMembership(body []byte, keys *smyProtocolKeys) (object.SmyMembersh
 }
 
 func (c *ApiController) SmyMaintainMembership() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	c.Ctx.Output.Header("Cache-Control", "no-store")
 	c.Ctx.Output.Header("Content-Type", "application/json; charset=utf-8")
 	keys, err := loadSmyProtocolKeys()
@@ -114,6 +119,10 @@ func (c *ApiController) SmyMaintainMembership() {
 }
 
 func (c *ApiController) GetMembershipCustomerHistory() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	c.Ctx.Output.Header("Cache-Control", "no-store")
 	if !c.IsAdminOfOrganization(object.SmyMembershipOwner) {
 		c.ResponseError(c.T("auth:Unauthorized operation"))

@@ -129,6 +129,13 @@ func IsDemoMode() bool {
 	return strings.ToLower(GetConfigString("isDemoMode")) == "true"
 }
 
+// IsBaseMode reports whether this deployment runs the upstream base behavior.
+// The BeiBei customizations are the default; setting baseMode = true in
+// app.conf opts the instance out and restores the plain Casdoor code paths.
+func IsBaseMode() bool {
+	return GetConfigBool("baseMode")
+}
+
 func IsDemoDatabase() bool {
 	return GetConfigString("dbName") == "casdoor_demo"
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/casdoor/casdoor/conf"
 	"github.com/casdoor/casdoor/object"
 )
 
@@ -28,6 +29,10 @@ type redeemMembershipRequest struct {
 func membershipPepper() string { return os.Getenv("CASDOOR_MEMBERSHIP_CODE_PEPPER") }
 
 func (c *ApiController) AddRedemptionBatch() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	var req redemptionBatchRequest
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &req); err != nil {
 		c.ResponseError("invalid request body")
@@ -50,6 +55,10 @@ func (c *ApiController) AddRedemptionBatch() {
 }
 
 func (c *ApiController) GetRedemptionBatches() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	owner := c.Ctx.Input.Query("owner")
 	if !c.IsAdminOfOrganization(owner) {
 		c.ResponseError(c.T("auth:Unauthorized operation"))
@@ -64,6 +73,10 @@ func (c *ApiController) GetRedemptionBatches() {
 }
 
 func (c *ApiController) DisableRedemptionBatch() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	var req struct{ Owner, Name string }
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &req); err != nil {
 		c.ResponseError("invalid request body")
@@ -79,6 +92,10 @@ func (c *ApiController) DisableRedemptionBatch() {
 }
 
 func (c *ApiController) RedeemMembershipCode() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	var req redeemMembershipRequest
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &req); err != nil {
 		c.ResponseError("invalid request body")
@@ -100,6 +117,10 @@ func (c *ApiController) RedeemMembershipCode() {
 }
 
 func (c *ApiController) GetMyRedemptions() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	owner, currentUser := c.Ctx.Input.Query("owner"), c.getCurrentUser()
 	if owner == "" || currentUser == nil || currentUser.Owner != owner {
 		c.ResponseError(c.T("auth:Unauthorized operation"))
@@ -114,6 +135,10 @@ func (c *ApiController) GetMyRedemptions() {
 }
 
 func (c *ApiController) GetRedemptions() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	owner := c.Ctx.Input.Query("owner")
 	if !c.IsAdminOfOrganization(owner) {
 		c.ResponseError(c.T("auth:Unauthorized operation"))

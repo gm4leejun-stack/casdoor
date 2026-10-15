@@ -58,7 +58,9 @@ function fieldClass(field: string): string {
 }
 
 function isLobeHubApplication(application: any) {
-  return application?.name === "lobehub" && application?.organization === "beibei";
+  // the BeiBei customizations are the deployment default; baseMode falls back
+  // to the upstream signup experience for every application
+  return !!application && !application.baseMode;
 }
 
 /** the application editor's live preview hands the form's own object over */

@@ -808,7 +808,7 @@ func (c *ApiController) GetInitAdminStatus() {
 func (c *ApiController) InitAdminPassword() {
 	password := c.Ctx.Request.Form.Get("password")
 
-	organization, err := object.GetOrganization(util.GetId("admin", object.InitAdminOrganization))
+	organization, err := object.GetOrganization(util.GetId("admin", object.InitAdminOrganizationName()))
 	if err != nil {
 		c.ResponseError(err.Error())
 		return

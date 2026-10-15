@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/beego/beego/v2/server/web"
+	"github.com/casdoor/casdoor/conf"
 	"github.com/casdoor/casdoor/form"
 	"github.com/casdoor/casdoor/object"
 	"github.com/casdoor/casdoor/util"
@@ -170,6 +171,10 @@ func smyDecodeUnionLogin(body []byte, keys *smyProtocolKeys, now time.Time) (obj
 }
 
 func (c *ApiController) SmyUnionLogin() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	c.Ctx.Output.Header("Cache-Control", "no-store")
 	c.Ctx.Output.Header("Content-Type", "application/json; charset=utf-8")
 	keys, err := loadSmyProtocolKeys()
@@ -233,6 +238,10 @@ func smyUnionAccountSafety(user *object.User, organization *object.Organization)
 }
 
 func (c *ApiController) SmyUnionLoginExchange() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	c.Ctx.Output.Header("Cache-Control", "no-store")
 	c.Ctx.Output.Header("Referrer-Policy", "no-referrer")
 	c.Ctx.Output.Header("X-Content-Type-Options", "nosniff")

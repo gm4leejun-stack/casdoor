@@ -4,11 +4,15 @@ import (
 	"errors"
 	"time"
 
+	"github.com/casdoor/casdoor/conf"
 	"github.com/xorm-io/core"
 	"github.com/xorm-io/xorm"
 )
 
 func rejectManagedMembership(s *xorm.Session, sub *Subscription) error {
+	if conf.IsBaseMode() {
+		return nil
+	}
 	if sub == nil {
 		return nil
 	}

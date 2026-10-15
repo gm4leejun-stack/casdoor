@@ -68,6 +68,10 @@ func membershipEntitlement(owner, userName, plan string) (*object.MembershipEnti
 }
 
 func (c *ApiController) GetMyMembershipEntitlement() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	owner := c.Ctx.Input.Query("owner")
 	plan := c.Ctx.Input.Query("plan")
 	currentUser := c.getCurrentUser()
@@ -85,6 +89,10 @@ func (c *ApiController) GetMyMembershipEntitlement() {
 }
 
 func (c *ApiController) GetMembershipEntitlement() {
+	if conf.IsBaseMode() {
+		c.ResponseError("customized membership endpoints are disabled in base mode")
+		return
+	}
 	issuer, userID := c.Ctx.Input.Query("issuer"), c.Ctx.Input.Query("userId")
 	if !validateMembershipSubject(issuer, userID, conf.GetConfigString("origin")) {
 		c.ResponseError("issuer and userId are required and issuer must match this BeiBei AI instance")
